@@ -16,6 +16,7 @@ const setRefreshCookie = (res, token) => {
     secure: env.NODE_ENV === 'production',
     sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge,
+    domain: env.COOKIE_DOMAIN || undefined,
   });
 };
 
@@ -27,6 +28,7 @@ const clearRefreshCookie = (res) => {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: env.COOKIE_DOMAIN || undefined,
   });
 };
 

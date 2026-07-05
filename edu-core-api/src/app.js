@@ -2,6 +2,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -86,17 +87,26 @@ const loginLimiter = rateLimit({
 app.use('/api', limiter);
 app.use('/api/v1/auth/login', loginLimiter);
 
-// 7. Health Check
+// 7. Robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send('User-agent: *\nDisallow: /');
+});
+
+// 8. Health Check
 app.get('/health', (req, res) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.status(200).json({
     success: true,
     message: 'API is healthy',
     timestamp: new Date().toISOString(),
     env: env.NODE_ENV,
+    dbStatus,
   });
 });
 
-// 8. API Routes Integration
+// 9. API Routes Integration
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/students', studentRoutes);
@@ -108,12 +118,12 @@ app.use('/api/v1/salaries', salaryRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/activity-log', activityLogRoutes);
 
-// 9. 404 Handler
+// 10. 404 Handler
 app.all('*', (req, res, next) => {
   next(new AppError(`المسار ${req.originalUrl} غير موجود`, 404));
 });
 
-// 10. Global Error Handler
+// 11. Global Error Handler
 
 app.use((err, req, res, _next) => {
   err.statusCode = err.statusCode || 500;

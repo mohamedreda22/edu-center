@@ -110,11 +110,17 @@ const StudentsListPage = () => {
         </Button>
       </PageHeader>
 
-      <div className="bg-card p-4 border rounded-xl space-y-4">
-        <SearchFilterBar
-          onSearch={setSearch}
-          placeholder="بحث بالاسم، الهاتف أو المنطقة..."
-        />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+           <SearchFilterBar
+            onSearch={setSearch}
+            placeholder="بحث بالاسم، الهاتف أو المنطقة..."
+          />
+          <div className="flex gap-2">
+             {/* Filters could go here */}
+          </div>
+        </div>
+
         <DataTable
           columns={columns}
           data={data?.data || []}

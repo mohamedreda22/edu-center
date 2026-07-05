@@ -27,13 +27,15 @@ const SearchFilterBar = ({ placeholder = 'بحث...', onSearch }) => {
   }, [inputValue, searchParams, setSearchParams, onSearch]);
 
   return (
-    <div className="relative w-full max-w-sm">
-      <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="relative w-full max-w-sm group">
+      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+        <Search className="h-4 w-4 text-primary/40 group-focus-within:text-primary transition-colors" />
+      </div>
       <Input
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder={placeholder}
-        className="pr-10"
+        className="pr-10 bg-white border-none shadow-sm focus-visible:ring-secondary rounded-xl transition-all duration-200"
       />
     </div>
   );

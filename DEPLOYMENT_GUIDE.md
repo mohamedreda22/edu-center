@@ -93,7 +93,17 @@ CORS_ORIGIN=https://app.rakaninstitutekw.com
 
 ---
 
-## 6. Maintenance & Logs
+## 6. Backup & Data Security
+
+### Database Backups (MongoDB Atlas)
+1.  **Automatic Backups**: Atlas provides built-in snapshots. Go to **Deployment -> Backup** in the Atlas portal to configure retention policies.
+2.  **Manual Export**: Use `mongoexport` or the **Database Tools** to download a JSON/CSV copy of your data.
+
+### Environment Safety
+*   **DO NOT** commit `.env` files to version control.
+*   Rotate `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` every 6 months for enhanced security.
+
+## 7. Maintenance & Logs
 *   **API Logs**: Check Hostinger Node.js logs or `stderr.log` in your App Root.
 *   **Database**: Manage collections and performance via MongoDB Atlas Dashboard.
 *   **Frontend**: Monitor deployments and analytics via Vercel Dashboard.

@@ -27,17 +27,18 @@ const FormDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px]" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="text-right">{title}</DialogTitle>
+      <DialogContent className="sm:max-w-[425px] rounded-3xl border-none shadow-2xl p-0 overflow-hidden" dir="rtl">
+        <div className="h-2 bg-secondary w-full" />
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-right text-2xl font-black text-primary tracking-tight">{title}</DialogTitle>
           {description && (
-            <DialogDescription className="text-right">
+            <DialogDescription className="text-right font-medium text-muted-foreground">
               {description}
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="py-4">{children}</div>
-        <DialogFooter className="gap-2 sm:gap-0">
+        <div className="p-6 py-4">{children}</div>
+        <DialogFooter className="p-6 pt-2 bg-gray-50 flex flex-row-reverse gap-3 sm:gap-3">
           <Button
             type="button"
             variant="outline"

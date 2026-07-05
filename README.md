@@ -1,75 +1,55 @@
-# Rakan Institute Management System
+# Rakan Academy - Enterprise ERP
+نظام إدارة أكاديمية ركان المتكامل
 
-Next.js-based comprehensive institute management system with role-based authentication, student/teacher management, payment processing, and activity logging.
+## Overview
+**أكاديمية ركان** is a production-grade Educational Management Platform (ERP) designed to streamline the operations of educational institutes. It features a robust Node.js API and a modern React/Vite frontend.
 
-## ⚠️ Security Warning
-Do NOT run this system on a public domain without HTTPS. The application uses JWT tokens and authentication APIs that should be protected in production.
+### 🚀 Production URLs
+- **Frontend**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
+- **Backend API**: [https://rakaninstitutekw.com/api](https://rakaninstitutekw.com/api)
+- **Landing Page**: [https://rakaninstitutekw.com](https://rakaninstitutekw.com)
 
-## Getting Started
+## 🏗️ Architecture
+The system is built as a monorepo consisting of:
+- `edu-core-api`: Node.js/Express backend with MongoDB Atlas.
+- `edu-core-web`: React/Vite frontend hosted on Vercel.
 
-First, install dependencies:
-11
+## ✨ Key Features
+- **Smart Scheduling**: Conflict-aware lesson management.
+- **Financial Module**: Automated teacher payroll and student payment tracking.
+- **Role-Based Access Control (RBAC)**: Admin, Receptionist, Teacher, and Accountant roles.
+- **Branded UI**: Custom-designed interface matching Rakan Academy's identity.
+
+## 🛠️ Tech Stack
+- **Frontend**: React 19, Vite, Tailwind CSS, Shadcn/UI, TanStack Query.
+- **Backend**: Node.js, Express, Mongoose, JWT (Access/Refresh Tokens), Winston Logging.
+- **Database**: MongoDB Atlas (Cloud).
+- **Deployment**: Vercel (Web), Hostinger Cloud (API).
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js v20+
+- MongoDB instance (Atlas recommended)
+
+### Backend Setup
 ```bash
+cd edu-core-api
 npm install
-```
-
-Then run the development server:
-
-```bash
+cp .env.example .env # Configure your Atlas URI and Secrets
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-This project uses:
-- **Next.js 16.2.9** with App Router
-- **TypeScript** with ESLint
-- **Prisma** with PostgreSQL
-- **Tailwind CSS** for styling
-- **Zod** for input validation
-- **bcrypt** for password hashing
-- **jsonwebtoken** for JWT authentication
-- **@tanstack/react-query** for data fetching
-- **@upstash/ratelimit** for rate limiting
-
-The system is organized into:
-- `app/` - Next.js application routes (authentication, dashboard, student management)
-- `components/` - UI components (forms, tables, modals)
-- `lib/` - Core services (database, validation, logging, utilities)
-- `prisma/` - Database schema and migrations
-- `hooks/` - Custom React hooks
-- `automation/` - Automation scripts
-- `cron/` - Cron job management
-
-First, run the development server:
-
+### Frontend Setup
 ```bash
+cd edu-core-web
+npm install
+cp .env.example .env # Configure VITE_API_BASE_URL
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📖 Documentation
+Detailed deployment and configuration steps can be found in [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+© 2026 Rakan Academy. All rights reserved.

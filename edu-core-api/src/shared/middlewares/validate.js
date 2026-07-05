@@ -1,13 +1,16 @@
 import { ValidationError } from '../errors/ValidationError.js';
 
 /**
- * Validate request body against Zod schema
+ * Validate request against Zod schema
  * @param {import('zod').ZodSchema} schema
+ * @param {'body' | 'query' | 'params'} source - The property of req to validate (default: 'body')
  */
-export const validate = (schema) => {
+export const validate = (schema, source = 'body') => {
   return async (req, res, next) => {
     try {
-      await schema.parseAsync(req.body);
+      const validatedData = await schema.parseAsync(req[source]);
+      // Override with validated data to ensure type safety and remove unknown fields if configured in Zod
+      req[source] = validatedData;
       next();
     } catch (error) {
       const details = error.errors.map((err) => ({

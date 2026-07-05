@@ -46,27 +46,33 @@ const LoginPage = () => {
 
   return (
     <div
-      className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4"
+      className="flex items-center justify-center min-h-screen bg-primary px-4 relative overflow-hidden"
       dir="rtl"
     >
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center font-bold">
-            تسجيل الدخول
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px]" />
+
+      <Card className="w-full max-w-md border-none shadow-2xl bg-white/95 backdrop-blur-sm relative z-10 rounded-3xl overflow-hidden">
+        <div className="h-2 bg-secondary w-full" />
+        <CardHeader className="space-y-4 pt-8">
+          <div className="flex flex-col items-center space-y-2">
+             <h1 className="text-3xl font-black text-primary tracking-tight">أكاديمية ركان</h1>
+             <div className="h-1 w-12 bg-secondary rounded-full" />
+          </div>
+          <CardTitle className="text-xl text-center font-bold text-gray-800">
+            تسجيل الدخول للنظام
           </CardTitle>
-          <p className="text-center text-muted-foreground text-sm">
-            Edu-Core Management System
-          </p>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 px-8">
             {error && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl font-medium animate-shake">
                 {error}
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="email">
+              <label className="text-sm font-bold text-gray-700 mr-1" htmlFor="email">
                 البريد الإلكتروني
               </label>
               <Input
@@ -74,32 +80,43 @@ const LoginPage = () => {
                 type="email"
                 placeholder="name@example.com"
                 {...register('email')}
-                className={errors.email ? 'border-red-500' : ''}
+                className={cn(
+                  "bg-gray-50 border-none shadow-inner rounded-xl h-12 focus-visible:ring-secondary",
+                  errors.email && 'ring-2 ring-red-500'
+                )}
               />
               {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
+                <p className="text-xs text-red-500 font-medium mr-1">{errors.email.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="password">
+              <label className="text-sm font-bold text-gray-700 mr-1" htmlFor="password">
                 كلمة المرور
               </label>
               <Input
                 id="password"
                 type="password"
+                placeholder="••••••••"
                 {...register('password')}
-                className={errors.password ? 'border-red-500' : ''}
+                className={cn(
+                  "bg-gray-50 border-none shadow-inner rounded-xl h-12 focus-visible:ring-secondary",
+                  errors.password && 'ring-2 ring-red-500'
+                )}
               />
               {errors.password && (
-                <p className="text-xs text-red-500">
+                <p className="text-xs text-red-500 font-medium mr-1">
                   {errors.password.message}
                 </p>
               )}
             </div>
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'جاري التحميل...' : 'دخول'}
+          <CardFooter className="px-8 pb-10">
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'جاري الدخول...' : 'تسجيل الدخول'}
             </Button>
           </CardFooter>
         </form>

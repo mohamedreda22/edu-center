@@ -118,11 +118,13 @@ const TeachersListPage = () => {
         </Button>
       </PageHeader>
 
-      <div className="bg-card p-4 border rounded-xl space-y-4">
-        <SearchFilterBar
-          onSearch={setSearch}
-          placeholder="بحث بالكود أو القسم..."
-        />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+           <SearchFilterBar
+            onSearch={setSearch}
+            placeholder="بحث بالكود أو القسم..."
+          />
+        </div>
         <DataTable
           columns={columns}
           data={data?.data || []}

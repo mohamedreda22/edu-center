@@ -1,0 +1,41 @@
+import dotenv from 'dotenv';
+import { z } from 'zod';
+
+dotenv.config();
+
+const envSchema = z.object({
+  // Server Configuration
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+  PORT: z.string().transform(Number).default('5000'),
+
+  // Database Configuration
+  MONGO_URI: z.string().url(),
+
+  // JWT Configuration
+  JWT_ACCESS_SECRET: z.string().min(32),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+
+  // CORS & Security
+  CORS_ORIGIN: z.string().url(),
+  COOKIE_DOMAIN: z.string().optional(),
+
+  // Logging
+  LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),
+});
+
+const _env = envSchema.safeParse(process.env);
+
+if (!_env.success) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '❌ Invalid environment variables:',
+    JSON.stringify(_env.error.format(), null, 2)
+  );
+  process.exit(1);
+}
+
+export const env = _env.data;

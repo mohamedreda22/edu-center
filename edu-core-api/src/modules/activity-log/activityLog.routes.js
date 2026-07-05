@@ -1,0 +1,17 @@
+import express from 'express';
+import * as activityLogController from './activityLog.controller.js';
+import { authenticate } from '../../shared/middlewares/authenticate.js';
+import { authorize } from '../../shared/middlewares/authorize.js';
+import { UserRole } from '../../shared/constants/enums.js';
+
+const router = express.Router();
+
+router.use(authenticate);
+
+router.get(
+  '/',
+  authorize(UserRole.ADMIN),
+  activityLogController.getActivityLogs
+);
+
+export default router;

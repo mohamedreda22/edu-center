@@ -1,12 +1,13 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import { studentApi } from '@/features/students/services/studentApi';
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { useQuery } from '@tanstack/react-query';
-import { studentApi } from '@/features/students/services/studentApi';
 import { PaymentStatus } from '@/shared/constants/enums';
 
 const paymentSchema = z.object({
@@ -46,7 +47,9 @@ const PaymentFormDialog = ({
   });
 
   React.useEffect(() => {
-    if (open) reset(initialData);
+    if (open) {
+      reset(initialData);
+    }
   }, [open, reset, initialData]);
 
   return (

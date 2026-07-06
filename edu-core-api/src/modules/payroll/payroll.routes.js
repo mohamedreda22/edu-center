@@ -1,8 +1,11 @@
 import express from 'express';
+
 import * as payrollController from './payroll.controller.js';
+import { generatePayrollSchema } from './payroll.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
-import { UserRole } from '../../shared/constants/enums.js';
+import { validate } from '../../shared/middlewares/validate.js';
 
 const router = express.Router();
 
@@ -17,6 +20,7 @@ router.get(
 router.post(
   '/generate',
   authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(generatePayrollSchema),
   payrollController.generatePayroll
 );
 

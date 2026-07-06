@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { PaymentStatus } from '../../shared/constants/enums.js';
 
 const paymentSchema = new mongoose.Schema(

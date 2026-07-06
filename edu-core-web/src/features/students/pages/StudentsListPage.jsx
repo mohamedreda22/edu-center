@@ -112,13 +112,11 @@ const StudentsListPage = () => {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-           <SearchFilterBar
+          <SearchFilterBar
             onSearch={setSearch}
             placeholder="بحث بالاسم، الهاتف أو المنطقة..."
           />
-          <div className="flex gap-2">
-             {/* Filters could go here */}
-          </div>
+          <div className="flex gap-2">{/* Filters could go here */}</div>
         </div>
 
         <DataTable

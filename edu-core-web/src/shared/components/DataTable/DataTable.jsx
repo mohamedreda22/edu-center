@@ -5,16 +5,23 @@ import { cn } from '../../utils';
 const DataTable = ({ columns, data, isLoading, className }) => {
   return (
     <div
-      className={cn('relative overflow-x-auto border-none shadow-sm rounded-2xl bg-white', className)}
+      className={cn(
+        'relative overflow-x-auto border-none shadow-sm rounded-2xl bg-white',
+        className
+      )}
     >
       <table className="w-full text-sm text-right text-foreground">
         <thead className="text-xs uppercase bg-primary text-primary-foreground border-b">
           <tr>
             {columns.map((col, idx) => (
-              <th key={idx} scope="col" className={cn(
-                "px-6 py-4 font-bold tracking-wider first:rounded-tr-2xl last:rounded-tl-2xl",
-                idx === 0 && "pr-8"
-              )}>
+              <th
+                key={idx}
+                scope="col"
+                className={cn(
+                  'px-6 py-4 font-bold tracking-wider first:rounded-tr-2xl last:rounded-tl-2xl',
+                  idx === 0 && 'pr-8'
+                )}
+              >
                 {col.header}
               </th>
             ))}
@@ -38,10 +45,13 @@ const DataTable = ({ columns, data, isLoading, className }) => {
                 className="bg-white hover:bg-secondary/5 transition-all duration-200 group"
               >
                 {columns.map((col, cidx) => (
-                  <td key={cidx} className={cn(
-                    "px-6 py-4 whitespace-nowrap font-medium text-gray-600 group-hover:text-primary transition-colors",
-                    cidx === 0 && "pr-8"
-                  )}>
+                  <td
+                    key={cidx}
+                    className={cn(
+                      'px-6 py-4 whitespace-nowrap font-medium text-gray-600 group-hover:text-primary transition-colors',
+                      cidx === 0 && 'pr-8'
+                    )}
+                  >
                     {col.cell ? col.cell(row) : row[col.accessor]}
                   </td>
                 ))}

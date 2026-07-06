@@ -64,7 +64,7 @@ Grouped by milestone (see `07_MIGRATION_PLAN.md` for milestone definitions). Wit
 - [x] Frontend: report views, date-range picker, (stretch) CSV export
 
 ## Milestone 12 — Notifications (new capability)
-- [ ] Hook point for payment-due and lesson-reminder notifications
+- [x] Hook point for payment-due and lesson-reminder notifications
 
 ## Milestone 13 — Settings
 - [x] Profile management, password change (bumps `tokenVersion`)
@@ -77,5 +77,5 @@ Grouped by milestone (see `07_MIGRATION_PLAN.md` for milestone definitions). Wit
 
 ## Milestone 15 — Testing
 - [x] Unit tests for all `shared/services` (especially `commissionCalculator`, conflict detection)
-- [ ] Integration tests per module
-- [ ] E2E happy-path per feature (Playwright)
+- [x] Integration tests per module
+- [x] E2E happy-path per feature (Playwright)

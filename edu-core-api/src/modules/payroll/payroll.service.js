@@ -1,11 +1,12 @@
-import Lesson from '../lessons/lesson.model.js';
-import Teacher from '../teachers/teacher.model.js';
 import PayrollRecord from './payrollRecord.model.js';
 import PayrollTransaction from './payrollTransaction.model.js';
-import { withTransaction } from '../../shared/utils/withTransaction.js';
+import { CompensationType } from '../../shared/constants/enums.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { ValidationError } from '../../shared/errors/ValidationError.js';
-import { CompensationType } from '../../shared/constants/enums.js';
+import * as auditLogger from '../../shared/services/auditLogger.service.js';
+import { withTransaction } from '../../shared/utils/withTransaction.js';
+import Lesson from '../lessons/lesson.model.js';
+import Teacher from '../teachers/teacher.model.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -14,7 +15,9 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
   return withTransaction(async (session) => {
     // 1. Get Teacher
     const teacher = await Teacher.findById(teacherId);
-    if (!teacher) throw new NotFoundError('المعلم غير موجود');
+    if (!teacher) {
+      throw new NotFoundError('المعلم غير موجود');
+    }
 
     // Enforce reconciliation: reject Payroll for HOURLY teachers
     if (teacher.compensationType === CompensationType.HOURLY) {
@@ -34,7 +37,7 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
     }).session(session);
 
     // 3. Aggregate totals
-    let completedLessons = lessons.length;
+    const completedLessons = lessons.length;
     let totalLessonValue = 0;
     let teacherEarnings = 0;
     let instituteRevenue = 0;
@@ -83,6 +86,15 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
       { session }
     );
 
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'RECALCULATE_PAYROLL',
+      entityType: 'PayrollRecord',
+      entityId: payrollRecord._id,
+      details: { month, year, finalAmount: payrollRecord.finalAmount },
+    });
+
     return payrollRecord;
   });
 };
@@ -93,9 +105,15 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 export const getAllPayroll = async (query = {}) => {
   const { teacherId, month, year } = query;
   const filter = {};
-  if (teacherId) filter.teacherId = teacherId;
-  if (month) filter.month = Number(month);
-  if (year) filter.year = Number(year);
+  if (teacherId) {
+    filter.teacherId = teacherId;
+  }
+  if (month) {
+    filter.month = Number(month);
+  }
+  if (year) {
+    filter.year = Number(year);
+  }
 
   return PayrollRecord.find(filter)
     .populate('teacherId')
@@ -108,7 +126,9 @@ export const getAllPayroll = async (query = {}) => {
 export const markPaid = async (id, userId) => {
   return withTransaction(async (session) => {
     const record = await PayrollRecord.findById(id);
-    if (!record) throw new NotFoundError('سجل الراتب غير موجود');
+    if (!record) {
+      throw new NotFoundError('سجل الراتب غير موجود');
+    }
 
     record.paid = true;
     record.paidDate = new Date();
@@ -126,6 +146,15 @@ export const markPaid = async (id, userId) => {
       ],
       { session }
     );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'MARK_PAYROLL_PAID',
+      entityType: 'PayrollRecord',
+      entityId: record._id,
+      details: { month: record.month, year: record.year },
+    });
 
     return record;
   });

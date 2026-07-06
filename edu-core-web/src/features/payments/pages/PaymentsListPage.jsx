@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import PaymentFormDialog from '../components/PaymentFormDialog';
+import { paymentApi } from '../services/paymentApi';
+
+import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 import DataTable from '@/shared/components/DataTable/DataTable';
+import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Button } from '@/shared/components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { paymentApi } from '../services/paymentApi';
-import PaymentFormDialog from '../components/PaymentFormDialog';
-import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
-import { formatMoney } from '@/shared/utils/money';
 import { formatDate } from '@/shared/utils/date';
+import { formatMoney } from '@/shared/utils/money';
 
 const PaymentsListPage = () => {
   const queryClient = useQueryClient();

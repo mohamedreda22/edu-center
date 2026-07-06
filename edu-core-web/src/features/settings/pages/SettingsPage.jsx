@@ -1,22 +1,29 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/features/auth/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
+
+import { userApi } from '../services/userApi';
+
+import { useAuth } from '@/features/auth/AuthContext';
+import { authApi } from '@/features/auth/services/authApi';
+import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import { Button } from '@/shared/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Label } from '@/shared/components/ui/label';
 import { Input } from '@/shared/components/ui/input';
-import { authApi } from '@/features/auth/services/authApi';
-import { userApi } from '../services/userApi';
-import DataTable from '@/shared/components/DataTable/DataTable';
+import { Label } from '@/shared/components/ui/label';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/shared/components/ui/tabs';
 import { formatDate } from '@/shared/utils/date';
-import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -45,7 +52,9 @@ const SettingsPage = () => {
       setNewPassword('');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error?.message || 'فشل تغيير كلمة المرور');
+      toast.error(
+        error.response?.data?.error?.message || 'فشل تغيير كلمة المرور'
+      );
     },
   });
 
@@ -75,7 +84,9 @@ const SettingsPage = () => {
 
   const handlePasswordChange = (e) => {
     e.preventDefault();
-    if (!oldPassword || !newPassword) return;
+    if (!oldPassword || !newPassword) {
+      return;
+    }
     changePasswordMutation.mutate({ oldPassword, newPassword });
   };
 
@@ -84,7 +95,7 @@ const SettingsPage = () => {
     { header: 'User Agent', accessor: 'userAgent' },
     {
       header: 'تاريخ الدخول',
-      cell: (row) => formatDate(row.createdAt, 'yyyy/MM/dd HH:mm')
+      cell: (row) => formatDate(row.createdAt, 'yyyy/MM/dd HH:mm'),
     },
     {
       header: 'إجراءات',
@@ -97,8 +108,8 @@ const SettingsPage = () => {
         >
           إنهاء
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   const userColumns = [
@@ -109,7 +120,12 @@ const SettingsPage = () => {
       cell: (row) => (
         <select
           value={row.role}
-          onChange={(e) => updateUserMutation.mutate({ id: row._id, data: { role: e.target.value } })}
+          onChange={(e) =>
+            updateUserMutation.mutate({
+              id: row._id,
+              data: { role: e.target.value },
+            })
+          }
           className="bg-transparent border-none text-sm"
         >
           <option value="ADMIN">ADMIN</option>
@@ -117,7 +133,7 @@ const SettingsPage = () => {
           <option value="TEACHER">TEACHER</option>
           <option value="ACCOUNTANT">ACCOUNTANT</option>
         </select>
-      )
+      ),
     },
     {
       header: 'الحالة',
@@ -125,7 +141,7 @@ const SettingsPage = () => {
         <span className={row.isActive ? 'text-green-600' : 'text-red-600'}>
           {row.isActive ? 'نشط' : 'غير نشط'}
         </span>
-      )
+      ),
     },
     {
       header: 'إجراءات',
@@ -133,12 +149,17 @@ const SettingsPage = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => updateUserMutation.mutate({ id: row._id, data: { isActive: !row.isActive } })}
+          onClick={() =>
+            updateUserMutation.mutate({
+              id: row._id,
+              data: { isActive: !row.isActive },
+            })
+          }
         >
           {row.isActive ? 'تعطيل' : 'تفعيل'}
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -161,7 +182,10 @@ const SettingsPage = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <Label>الاسم</Label>
-                  <Input value={`${user?.firstName} ${user?.lastName}`} readOnly />
+                  <Input
+                    value={`${user?.firstName} ${user?.lastName}`}
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label>البريد الإلكتروني</Label>
@@ -201,7 +225,9 @@ const SettingsPage = () => {
                     className="w-full"
                     disabled={changePasswordMutation.isPending}
                   >
-                    {changePasswordMutation.isPending ? 'جاري الحفظ...' : 'تغيير كلمة المرور'}
+                    {changePasswordMutation.isPending
+                      ? 'جاري الحفظ...'
+                      : 'تغيير كلمة المرور'}
                   </Button>
                 </form>
               </CardContent>

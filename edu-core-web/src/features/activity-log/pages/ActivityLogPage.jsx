@@ -1,8 +1,10 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import PageHeader from '@/shared/components/PageHeader/PageHeader';
-import DataTable from '@/shared/components/DataTable/DataTable';
+import React from 'react';
+
 import { activityLogApi } from '../services/activityLogApi';
+
+import DataTable from '@/shared/components/DataTable/DataTable';
+import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { formatDate } from '@/shared/utils/date';
 
 const ActivityLogPage = () => {

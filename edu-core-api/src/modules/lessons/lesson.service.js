@@ -1,11 +1,12 @@
-import Lesson from './lesson.model.js';
-import Teacher from '../teachers/teacher.model.js';
-import PayrollTransaction from '../payroll/payrollTransaction.model.js';
-import { calculateCommission } from '../../shared/services/commissionCalculator.js';
-import { withTransaction } from '../../shared/utils/withTransaction.js';
+import * as lessonRepository from './lesson.repository.js';
 import { ConflictError } from '../../shared/errors/ConflictError.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import * as auditLogger from '../../shared/services/auditLogger.service.js';
+import { calculateCommission } from '../../shared/services/commissionCalculator.js';
 import { notificationService } from '../../shared/services/notification.service.js';
+import { withTransaction } from '../../shared/utils/withTransaction.js';
+import PayrollTransaction from '../payroll/payrollTransaction.model.js';
+import * as teacherRepository from '../teachers/teacher.repository.js';
 
 /**
  * Check for scheduling conflicts
@@ -33,10 +34,13 @@ const checkConflict = async (
     ],
   };
 
-  if (entityType === 'teacher') query.teacherId = entityId;
-  else query.studentId = entityId;
+  if (entityType === 'teacher') {
+    query.teacherId = entityId;
+  } else {
+    query.studentId = entityId;
+  }
 
-  const conflict = await Lesson.findOne(query);
+  const conflict = await lessonRepository.findOne(query);
   return conflict;
 };
 
@@ -79,8 +83,10 @@ export const createLesson = async (lessonData, userId) => {
     }
 
     // 3. Get teacher for commission split
-    const teacher = await Teacher.findById(teacherId);
-    if (!teacher) throw new NotFoundError('المعلم غير موجود');
+    const teacher = await teacherRepository.findById(teacherId, session);
+    if (!teacher) {
+      throw new NotFoundError('المعلم غير موجود');
+    }
 
     const { teacherEarnings, instituteRevenue } = calculateCommission({
       lessonPrice,
@@ -88,18 +94,25 @@ export const createLesson = async (lessonData, userId) => {
     });
 
     // 4. Create lesson
-    const [lesson] = await Lesson.create(
-      [
-        {
-          ...lessonData,
-          teacherPercentage: teacher.teacherPercentage,
-          institutePercentage: teacher.institutePercentage,
-          teacherEarnings,
-          instituteRevenue,
-        },
-      ],
-      { session }
+    const [lesson] = await lessonRepository.create(
+      {
+        ...lessonData,
+        teacherPercentage: teacher.teacherPercentage,
+        institutePercentage: teacher.institutePercentage,
+        teacherEarnings,
+        instituteRevenue,
+      },
+      session
     );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'CREATE_LESSON',
+      entityType: 'Lesson',
+      entityId: lesson._id,
+      details: { lessonDate: lesson.lessonDate, startTime: lesson.startTime },
+    });
 
     // 5. Write audit transaction
     await PayrollTransaction.create(
@@ -138,9 +151,15 @@ export const createLesson = async (lessonData, userId) => {
 export const getAllLessons = async (query = {}) => {
   const { teacherId, studentId, date, status } = query;
   const filter = {};
-  if (teacherId) filter.teacherId = teacherId;
-  if (studentId) filter.studentId = studentId;
-  if (status) filter.status = status;
+  if (teacherId) {
+    filter.teacherId = teacherId;
+  }
+  if (studentId) {
+    filter.studentId = studentId;
+  }
+  if (status) {
+    filter.status = status;
+  }
   if (date) {
     const startOfDay = new Date(date);
     startOfDay.setUTCHours(0, 0, 0, 0);
@@ -149,10 +168,17 @@ export const getAllLessons = async (query = {}) => {
     filter.lessonDate = { $gte: startOfDay, $lte: endOfDay };
   }
 
-  return Lesson.find(filter)
-    .populate('teacherId')
-    .populate('studentId')
-    .sort({ lessonDate: 1, startTime: 1 });
+  const lessons = await lessonRepository.find(filter);
+
+  // Manually populate since generic repository find doesn't support it directly
+  const populatedLessons = await Promise.all(
+    lessons.map((l) => l.populate(['teacherId', 'studentId']))
+  );
+
+  return populatedLessons.sort(
+    (a, b) =>
+      a.lessonDate - b.lessonDate || a.startTime.localeCompare(b.startTime)
+  );
 };
 
 /**
@@ -160,12 +186,16 @@ export const getAllLessons = async (query = {}) => {
  */
 export const updateLessonStatus = async (id, status, notes, userId) => {
   return withTransaction(async (session) => {
-    const lesson = await Lesson.findById(id);
-    if (!lesson) throw new NotFoundError('الحصة غير موجودة');
+    const lesson = await lessonRepository.findById(id, session);
+    if (!lesson) {
+      throw new NotFoundError('الحصة غير موجودة');
+    }
 
     const previousValue = lesson.toObject();
     lesson.status = status;
-    if (notes) lesson.notes = notes;
+    if (notes) {
+      lesson.notes = notes;
+    }
     await lesson.save({ session });
 
     await PayrollTransaction.create(
@@ -181,6 +211,15 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
       ],
       { session }
     );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'UPDATE_LESSON_STATUS',
+      entityType: 'Lesson',
+      entityId: lesson._id,
+      details: { status, previousStatus: previousValue.status },
+    });
 
     return lesson;
   });

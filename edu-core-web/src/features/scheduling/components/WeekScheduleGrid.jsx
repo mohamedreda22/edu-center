@@ -1,6 +1,7 @@
-import React from 'react';
 import { format, startOfWeek, addDays, startOfDay, isSameDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import React from 'react';
+
 import { cn } from '@/shared/utils';
 
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 10 PM

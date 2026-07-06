@@ -1,13 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import { studentApi } from '@/features/students/services/studentApi';
+import { teacherApi } from '@/features/teachers/services/teacherApi';
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { useQuery } from '@tanstack/react-query';
-import { teacherApi } from '@/features/teachers/services/teacherApi';
-import { studentApi } from '@/features/students/services/studentApi';
 
 const lessonSchema = z.object({
   studentId: z.string().min(1, 'يجب تحديد الطالب'),
@@ -54,7 +55,9 @@ const LessonFormDialog = ({
   });
 
   React.useEffect(() => {
-    if (open) reset();
+    if (open) {
+      reset();
+    }
   }, [open, reset]);
 
   return (

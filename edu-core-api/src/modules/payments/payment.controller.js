@@ -2,7 +2,7 @@ import * as paymentService from './payment.service.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 export const createPayment = asyncHandler(async (req, res) => {
-  const payment = await paymentService.createPayment(req.body);
+  const payment = await paymentService.createPayment(req.body, req.user.id);
   res.status(201).json({
     success: true,
     data: payment,

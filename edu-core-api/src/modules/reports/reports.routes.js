@@ -1,19 +1,55 @@
 import express from 'express';
+
 import * as reportsController from './reports.controller.js';
+import { reportQuerySchema } from './reports.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
-import { UserRole } from '../../shared/constants/enums.js';
+import { validate } from '../../shared/middlewares/validate.js';
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use(authorize(UserRole.ADMIN, UserRole.ACCOUNTANT));
 
-router.get('/overview', reportsController.getOverview);
-router.get('/by-teacher', reportsController.getByTeacherReport);
-router.get('/by-subject', reportsController.getBySubjectReport);
-router.get('/by-level', reportsController.getByLevelReport);
-router.get('/export-csv', reportsController.exportCSV);
-router.get('/export-pdf', reportsController.exportPDF);
+router.get(
+  '/overview',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST),
+  reportsController.getOverview
+);
+
+router.get(
+  '/by-teacher',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.getByTeacherReport
+);
+
+router.get(
+  '/by-subject',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.getBySubjectReport
+);
+
+router.get(
+  '/by-level',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.getByLevelReport
+);
+
+router.get(
+  '/export-csv',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.exportCSV
+);
+
+router.get(
+  '/export-pdf',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.exportPDF
+);
 
 export default router;

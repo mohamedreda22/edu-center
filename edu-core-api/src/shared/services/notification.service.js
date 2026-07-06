@@ -1,3 +1,4 @@
+import emailAdapter from './EmailAdapter.js';
 import logger from './logger.js';
 
 /**
@@ -38,8 +39,6 @@ class NotificationService {
     });
   }
 }
-
-import emailAdapter from './EmailAdapter.js';
 
 export const notificationService = new NotificationService();
 

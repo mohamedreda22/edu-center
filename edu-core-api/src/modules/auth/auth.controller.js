@@ -1,8 +1,8 @@
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import * as authService from './auth.service.js';
-import { env } from '../../config/env.js';
 import RefreshToken from './refreshToken.model.js';
+import { env } from '../../config/env.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 /**
  * Set refresh token in httpOnly cookie
@@ -58,7 +58,7 @@ export const login = asyncHandler(async (req, res) => {
     entityId: user._id,
     details: { ipAddress, userAgent },
     ipAddress,
-    userAgent
+    userAgent,
   });
 
   res.status(200).json({
@@ -108,7 +108,9 @@ export const logout = asyncHandler(async (req, res) => {
 export const logoutAll = asyncHandler(async (req, res) => {
   await authService.logoutAll(req.user.id);
   clearRefreshCookie(res);
-  res.status(200).json({ success: true, message: 'Logged out from all devices' });
+  res
+    .status(200)
+    .json({ success: true, message: 'Logged out from all devices' });
 });
 
 /**
@@ -146,11 +148,13 @@ export const revokeSession = asyncHandler(async (req, res) => {
   });
 
   if (!session) {
-    return res.status(404).json({ success: false, message: 'Session not found' });
+    return res
+      .status(404)
+      .json({ success: false, message: 'Session not found' });
   }
 
   session.revokedAt = new Date();
   await session.save();
 
-  res.status(200).json({ success: true, message: 'Session revoked' });
+  return res.status(200).json({ success: true, message: 'Session revoked' });
 });

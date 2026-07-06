@@ -1,11 +1,13 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import AvailabilityPicker from './AvailabilityPicker';
+
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import AvailabilityPicker from './AvailabilityPicker';
 import { CommissionModel, Gender } from '@/shared/constants/enums';
 
 const teacherSchema = z.object({
@@ -60,7 +62,9 @@ const TeacherFormDialog = ({
   });
 
   React.useEffect(() => {
-    if (open) reset(initialData);
+    if (open) {
+      reset(initialData);
+    }
   }, [open, reset, initialData]);
 
   return (

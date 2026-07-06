@@ -1,17 +1,23 @@
-import Teacher from './teacher.model.js';
-import { generateCode } from '../../shared/utils/atomicCounter.js';
+import * as teacherRepository from './teacher.repository.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import { generateCode } from '../../shared/utils/atomicCounter.js';
+import { withTransaction } from '../../shared/utils/withTransaction.js';
 
 /**
  * Create a new teacher
  */
 export const createTeacher = async (teacherData) => {
-  const employeeCode = await generateCode('employeeCode', 'TCH');
-  const teacher = await Teacher.create({
-    ...teacherData,
-    employeeCode,
+  return withTransaction(async (session) => {
+    const employeeCode = await generateCode('employeeCode', 'TCH', session);
+    const [teacher] = await teacherRepository.create(
+      {
+        ...teacherData,
+        employeeCode,
+      },
+      session
+    );
+    return teacher;
   });
-  return teacher;
 };
 
 /**
@@ -22,8 +28,12 @@ export const getAllTeachers = async (query = {}) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (isActive !== undefined) filter.isActive = isActive === 'true';
-  if (department) filter.department = department;
+  if (isActive !== undefined) {
+    filter.isActive = isActive === 'true';
+  }
+  if (department) {
+    filter.department = department;
+  }
 
   if (search) {
     // Basic search for now, could be improved with text index
@@ -34,16 +44,20 @@ export const getAllTeachers = async (query = {}) => {
   }
 
   const [teachers, total] = await Promise.all([
-    Teacher.find(filter)
-      .populate('userId', 'firstName lastName email phone')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit)),
-    Teacher.countDocuments(filter),
+    teacherRepository.find(filter, {
+      skip,
+      limit: Number(limit),
+      sort: { createdAt: -1 },
+    }),
+    teacherRepository.countDocuments(filter),
   ]);
 
+  const populatedTeachers = await Promise.all(
+    teachers.map((t) => t.populate('userId', 'firstName lastName email phone'))
+  );
+
   return {
-    teachers,
+    teachers: populatedTeachers,
     pagination: {
       total,
       page: Number(page),
@@ -57,24 +71,18 @@ export const getAllTeachers = async (query = {}) => {
  * Get teacher by ID
  */
 export const getTeacherById = async (id) => {
-  const teacher = await Teacher.findById(id).populate(
-    'userId',
-    'firstName lastName email phone'
-  );
+  const teacher = await teacherRepository.findById(id);
   if (!teacher) {
     throw new NotFoundError('المعلم غير موجود');
   }
-  return teacher;
+  return teacher.populate('userId', 'firstName lastName email phone');
 };
 
 /**
  * Update teacher
  */
 export const updateTeacher = async (id, updateData) => {
-  const teacher = await Teacher.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: true,
-  });
+  const teacher = await teacherRepository.findByIdAndUpdate(id, updateData);
   if (!teacher) {
     throw new NotFoundError('المعلم غير موجود');
   }
@@ -85,7 +93,7 @@ export const updateTeacher = async (id, updateData) => {
  * Soft delete teacher
  */
 export const deleteTeacher = async (id) => {
-  const teacher = await Teacher.findByIdAndUpdate(id, {
+  const teacher = await teacherRepository.findByIdAndUpdate(id, {
     deletedAt: new Date(),
     isActive: false,
   });

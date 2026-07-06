@@ -43,9 +43,12 @@ export const deleteTeacher = asyncHandler(async (req, res) => {
 
 export const uploadFiles = asyncHandler(async (req, res) => {
   const updateData = {};
-  if (req.files.cv) updateData.cvUrl = req.files.cv[0].path;
-  if (req.files.certificates)
+  if (req.files.cv) {
+    updateData.cvUrl = req.files.cv[0].path;
+  }
+  if (req.files.certificates) {
     updateData.certificatesUrl = req.files.certificates[0].path;
+  }
 
   const teacher = await teacherService.updateTeacher(req.params.id, updateData);
 

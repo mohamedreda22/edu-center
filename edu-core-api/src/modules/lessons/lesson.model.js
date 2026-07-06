@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { LessonStatus } from '../../shared/constants/enums.js';
 
 const lessonSchema = new mongoose.Schema(

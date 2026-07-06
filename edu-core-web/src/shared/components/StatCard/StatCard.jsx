@@ -12,7 +12,12 @@ const StatCard = ({
   className,
 }) => {
   return (
-    <Card className={cn('overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 group', className)}>
+    <Card
+      className={cn(
+        'overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 group',
+        className
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
           {label}
@@ -22,10 +27,12 @@ const StatCard = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-black tracking-tight text-primary">{value}</div>
+        <div className="text-3xl font-black tracking-tight text-primary">
+          {value}
+        </div>
         {(trend || trendValue) && (
           <div className="flex items-center gap-1 mt-2">
-             <p
+            <p
               className={cn(
                 'text-xs font-bold px-2 py-0.5 rounded-full',
                 trend === 'up'
@@ -37,7 +44,9 @@ const StatCard = ({
             >
               {trendValue}
             </p>
-            <span className="text-[10px] text-muted-foreground font-medium">مقارنة بالشهر الماضي</span>
+            <span className="text-[10px] text-muted-foreground font-medium">
+              مقارنة بالشهر الماضي
+            </span>
           </div>
         )}
       </CardContent>

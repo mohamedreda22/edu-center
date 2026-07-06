@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import PageHeader from '@/shared/components/PageHeader/PageHeader';
-import DataTable from '@/shared/components/DataTable/DataTable';
-import { reportsApi } from '../services/reportsApi';
-import { formatMoney } from '@/shared/utils/money';
-import { Button } from '@/shared/components/ui/button';
 import { Download, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { reportsApi } from '../services/reportsApi';
+
+import DataTable from '@/shared/components/DataTable/DataTable';
+import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import { Button } from '@/shared/components/ui/button';
+import { formatMoney } from '@/shared/utils/money';
 
 const ReportsPage = () => {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -95,9 +97,27 @@ const ReportsPage = () => {
   ];
 
   const getActiveData = () => {
-    if (reportType === 'teacher') return { data: teacherData?.data || [], columns: teacherColumns, loading: loadingTeacher };
-    if (reportType === 'subject') return { data: subjectData?.data || [], columns: subjectColumns, loading: loadingSubject };
-    if (reportType === 'level') return { data: levelData?.data || [], columns: levelColumns, loading: loadingLevel };
+    if (reportType === 'teacher') {
+      return {
+        data: teacherData?.data || [],
+        columns: teacherColumns,
+        loading: loadingTeacher,
+      };
+    }
+    if (reportType === 'subject') {
+      return {
+        data: subjectData?.data || [],
+        columns: subjectColumns,
+        loading: loadingSubject,
+      };
+    }
+    if (reportType === 'level') {
+      return {
+        data: levelData?.data || [],
+        columns: levelColumns,
+        loading: loadingLevel,
+      };
+    }
     return { data: [], columns: [], loading: false };
   };
 
@@ -105,14 +125,15 @@ const ReportsPage = () => {
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
-      <PageHeader
-        title="تقارير الأداء"
-        description="تحليل الإيرادات والأداء"
-      >
+      <PageHeader title="تقارير الأداء" description="تحليل الإيرادات والأداء">
         <div className="flex flex-wrap gap-2 justify-end">
           <div className="flex gap-1 border rounded-md p-1 bg-muted/50">
-            <Button variant="ghost" size="sm" onClick={setToThisMonth}>الشهر الحالي</Button>
-            <Button variant="ghost" size="sm" onClick={setToLastMonth}>الشهر الماضي</Button>
+            <Button variant="ghost" size="sm" onClick={setToThisMonth}>
+              الشهر الحالي
+            </Button>
+            <Button variant="ghost" size="sm" onClick={setToLastMonth}>
+              الشهر الماضي
+            </Button>
           </div>
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="ml-2 h-4 w-4" />
@@ -158,11 +179,7 @@ const ReportsPage = () => {
           {reportType === 'subject' && 'ملخص الأداء لكل مادة'}
           {reportType === 'level' && 'ملخص الأداء لكل مرحلة'}
         </h3>
-        <DataTable
-          columns={columns}
-          data={data}
-          isLoading={loading}
-        />
+        <DataTable columns={columns} data={data} isLoading={loading} />
       </div>
     </div>
   );

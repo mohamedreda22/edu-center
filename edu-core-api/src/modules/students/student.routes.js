@@ -6,6 +6,7 @@ import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
+import * as attendanceController from '../lessons/attendance.controller.js';
 
 const router = express.Router();
 
@@ -34,5 +35,8 @@ router.delete(
   authorize(UserRole.ADMIN),
   studentController.deleteStudent
 );
+
+// Student Attendance History
+router.get('/:studentId/attendance', attendanceController.getStudentAttendance);
 
 export default router;

@@ -27,11 +27,15 @@ export const login = async (email, password, ipAddress, userAgent) => {
   }
 
   if (!(await user.comparePassword(password))) {
-    // Increment login attempts
+    // Increment login attempts with exponential backoff for lock duration
     user.loginAttempts += 1;
+
     if (user.loginAttempts >= 5) {
-      user.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // Lock for 30 mins
+      // 5 attempts: 15 mins, 6 attempts: 30 mins, 7 attempts: 60 mins...
+      const backoffMinutes = 15 * Math.pow(2, user.loginAttempts - 5);
+      user.lockUntil = new Date(Date.now() + backoffMinutes * 60 * 1000);
     }
+
     await user.save();
     throw new AuthError('البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
   }

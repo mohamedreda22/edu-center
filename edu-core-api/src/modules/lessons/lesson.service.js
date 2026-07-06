@@ -4,6 +4,7 @@ import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { calculateCommission } from '../../shared/services/commissionCalculator.js';
 import { notificationService } from '../../shared/services/notification.service.js';
+import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import PayrollTransaction from '../payroll/payrollTransaction.model.js';
 import * as teacherRepository from '../teachers/teacher.repository.js';
@@ -49,14 +50,10 @@ const checkConflict = async (
  */
 export const createLesson = async (lessonData, userId) => {
   return withTransaction(async (session) => {
-    const {
-      teacherId,
-      studentId,
-      lessonDate,
-      startTime,
-      endTime,
-      lessonPrice,
-    } = lessonData;
+    const { teacherId, studentId, lessonDate, startTime, endTime } = lessonData;
+
+    // Convert price to fils
+    const lessonPrice = toFils(lessonData.lessonPrice);
 
     // 1. Check teacher conflict
     const teacherConflict = await checkConflict(
@@ -97,6 +94,7 @@ export const createLesson = async (lessonData, userId) => {
     const [lesson] = await lessonRepository.create(
       {
         ...lessonData,
+        lessonPrice,
         teacherPercentage: teacher.teacherPercentage,
         institutePercentage: teacher.institutePercentage,
         teacherEarnings,

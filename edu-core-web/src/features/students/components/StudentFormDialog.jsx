@@ -7,6 +7,7 @@ import { studentSchema } from '../validations/studentSchema';
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
+import { toKWD } from '@/shared/utils/money';
 
 const StudentFormDialog = ({
   open,
@@ -38,7 +39,11 @@ const StudentFormDialog = ({
 
   React.useEffect(() => {
     if (open) {
-      reset(initialData);
+      const data = { ...initialData };
+      if (data.monthlyFee !== undefined) {
+        data.monthlyFee = toKWD(data.monthlyFee);
+      }
+      reset(data);
     }
   }, [open, reset, initialData]);
 

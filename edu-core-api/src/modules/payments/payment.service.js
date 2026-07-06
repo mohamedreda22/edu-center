@@ -2,11 +2,15 @@ import Payment from './payment.model.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
+import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 
 export const createPayment = async (paymentData, userId) => {
   return withTransaction(async (session) => {
-    const [payment] = await Payment.create([paymentData], { session });
+    const amount = toFils(paymentData.amount);
+    const [payment] = await Payment.create([{ ...paymentData, amount }], {
+      session,
+    });
 
     // Hook point: Send notification to student's user if exists
     if (payment.studentId) {

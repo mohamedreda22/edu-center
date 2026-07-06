@@ -66,6 +66,37 @@ export const getOverview = asyncHandler(async (req, res) => {
     stats.revenueTrendValue = '+15% من الشهر الماضي';
   }
 
+  // Teacher-specific stats
+  if (req.user.role === UserRole.TEACHER) {
+    const teacher = await import('../teachers/teacher.model.js').then((m) =>
+      m.default.findOne({ userId: req.user.id })
+    );
+
+    if (teacher) {
+      const upcomingLessons = await Lesson.find({
+        teacherId: teacher._id,
+        lessonDate: { $gte: now },
+        status: 'SCHEDULED',
+      })
+        .limit(5)
+        .populate('studentId', 'parentName');
+
+      stats.upcomingLessonsCount = await Lesson.countDocuments({
+        teacherId: teacher._id,
+        lessonDate: { $gte: startOfMonth, $lte: endOfMonth },
+        status: 'SCHEDULED',
+      });
+
+      stats.completedLessonsCount = await Lesson.countDocuments({
+        teacherId: teacher._id,
+        lessonDate: { $gte: startOfMonth, $lte: endOfMonth },
+        status: 'COMPLETED',
+      });
+
+      stats.upcomingLessons = upcomingLessons;
+    }
+  }
+
   res.status(200).json({
     success: true,
     data: stats,

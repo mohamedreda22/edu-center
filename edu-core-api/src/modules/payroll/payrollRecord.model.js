@@ -22,23 +22,23 @@ const payrollRecordSchema = new mongoose.Schema(
       default: 0,
     },
     totalLessonValue: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     teacherEarnings: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     instituteRevenue: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     transportDeductions: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     finalAmount: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     paid: {

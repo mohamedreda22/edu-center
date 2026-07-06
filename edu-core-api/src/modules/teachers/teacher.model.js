@@ -79,7 +79,7 @@ const teacherSchema = new mongoose.Schema(
       default: false,
     },
     hourlyRate: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
       min: 0,
     },

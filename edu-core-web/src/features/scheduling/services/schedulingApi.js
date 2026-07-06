@@ -18,4 +18,17 @@ export const schedulingApi = {
     );
     return response.data;
   },
+
+  markAttendance: async (lessonId, attendanceData) => {
+    const response = await apiClient.post(
+      `/v1/lessons/${lessonId}/attendance`,
+      attendanceData
+    );
+    return response.data;
+  },
+
+  getLessonAttendance: async (lessonId) => {
+    const response = await apiClient.get(`/v1/lessons/${lessonId}/attendance`);
+    return response.data;
+  },
 };

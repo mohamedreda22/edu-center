@@ -1,6 +1,7 @@
 import * as studentRepository from './student.repository.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { generateCode } from '../../shared/utils/atomicCounter.js';
+import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 
 /**
@@ -9,10 +10,13 @@ import { withTransaction } from '../../shared/utils/withTransaction.js';
 export const createStudent = async (studentData) => {
   return withTransaction(async (session) => {
     const studentCode = await generateCode('studentCode', 'STD', session);
+    const monthlyFee = toFils(studentData.monthlyFee);
+
     const [student] = await studentRepository.create(
       {
         ...studentData,
         studentCode,
+        monthlyFee,
       },
       session
     );
@@ -73,7 +77,12 @@ export const getStudentById = async (id) => {
  * Update student
  */
 export const updateStudent = async (id, updateData) => {
-  const student = await studentRepository.findByIdAndUpdate(id, updateData);
+  const data = { ...updateData };
+  if (data.monthlyFee !== undefined) {
+    data.monthlyFee = toFils(data.monthlyFee);
+  }
+
+  const student = await studentRepository.findByIdAndUpdate(id, data);
   if (!student) {
     throw new NotFoundError('الطالب غير موجود');
   }

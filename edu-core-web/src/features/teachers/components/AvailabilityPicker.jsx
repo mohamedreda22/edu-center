@@ -1,8 +1,9 @@
+import { Plus, Trash2 } from 'lucide-react';
 import React from 'react';
+
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { Plus, Trash2 } from 'lucide-react';
 import { WeekDays } from '@/shared/constants/enums';
 
 const AvailabilityPicker = ({ value = { days: [], slots: [] }, onChange }) => {

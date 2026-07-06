@@ -1,4 +1,3 @@
-import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import ActivityLog from './activityLog.model.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
@@ -7,9 +6,15 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (userId) filter.userId = userId;
-  if (entityType) filter.entityType = entityType;
-  if (entityId) filter.entityId = entityId;
+  if (userId) {
+    filter.userId = userId;
+  }
+  if (entityType) {
+    filter.entityType = entityType;
+  }
+  if (entityId) {
+    filter.entityId = entityId;
+  }
 
   const [logs, total] = await Promise.all([
     ActivityLog.find(filter)

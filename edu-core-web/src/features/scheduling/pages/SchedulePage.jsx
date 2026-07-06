@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
+import React, { useState } from 'react';
+
+import LessonFormDialog from '../components/LessonFormDialog';
+import WeekScheduleGrid from '../components/WeekScheduleGrid';
+import { schedulingApi } from '../services/schedulingApi';
+
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/button';
-import { Plus } from 'lucide-react';
-import { schedulingApi } from '../services/schedulingApi';
-import WeekScheduleGrid from '../components/WeekScheduleGrid';
-import LessonFormDialog from '../components/LessonFormDialog';
 
 const SchedulePage = () => {
   const queryClient = useQueryClient();

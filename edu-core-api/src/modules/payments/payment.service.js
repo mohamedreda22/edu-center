@@ -1,21 +1,34 @@
 import Payment from './payment.model.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
+import { withTransaction } from '../../shared/utils/withTransaction.js';
 
-export const createPayment = async (paymentData) => {
-  const payment = await Payment.create(paymentData);
+export const createPayment = async (paymentData, userId) => {
+  return withTransaction(async (session) => {
+    const [payment] = await Payment.create([paymentData], { session });
 
-  // Hook point: Send notification to student's user if exists
-  if (payment.studentId) {
-    notificationService.notify({
-      userId: payment.studentId,
-      title: 'استلام دفعة',
-      message: `تم تسجيل مبلغ ${payment.amount} KD بنجاح.`,
-      type: 'PAYMENT_RECEIVED',
+    // Hook point: Send notification to student's user if exists
+    if (payment.studentId) {
+      notificationService.notify({
+        userId: payment.studentId,
+        title: 'استلام دفعة',
+        message: `تم تسجيل مبلغ ${payment.amount} KD بنجاح.`,
+        type: 'PAYMENT_RECEIVED',
+      });
+    }
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'CREATE_PAYMENT',
+      entityType: 'Payment',
+      entityId: payment._id,
+      details: { amount: payment.amount, studentId: payment.studentId },
     });
-  }
 
-  return payment;
+    return payment;
+  });
 };
 
 export const getAllPayments = async (query = {}) => {
@@ -23,8 +36,12 @@ export const getAllPayments = async (query = {}) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (studentId) filter.studentId = studentId;
-  if (status) filter.status = status;
+  if (studentId) {
+    filter.studentId = studentId;
+  }
+  if (status) {
+    filter.status = status;
+  }
 
   const [payments, total] = await Promise.all([
     Payment.find(filter)
@@ -51,7 +68,9 @@ export const getPaymentById = async (id) => {
   const payment = await Payment.findById(id)
     .populate('studentId')
     .populate('lessonId');
-  if (!payment) throw new NotFoundError('السجل المالي غير موجود');
+  if (!payment) {
+    throw new NotFoundError('السجل المالي غير موجود');
+  }
   return payment;
 };
 
@@ -60,12 +79,16 @@ export const updatePayment = async (id, updateData) => {
     new: true,
     runValidators: true,
   });
-  if (!payment) throw new NotFoundError('السجل المالي غير موجود');
+  if (!payment) {
+    throw new NotFoundError('السجل المالي غير موجود');
+  }
   return payment;
 };
 
 export const deletePayment = async (id) => {
   const payment = await Payment.findByIdAndDelete(id);
-  if (!payment) throw new NotFoundError('السجل المالي غير موجود');
+  if (!payment) {
+    throw new NotFoundError('السجل المالي غير موجود');
+  }
   return payment;
 };

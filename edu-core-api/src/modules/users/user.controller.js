@@ -1,8 +1,31 @@
 import User from './user.model.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
-import { NotFoundError } from '../../shared/errors/NotFoundError.js';
-import { ForbiddenError } from '../../shared/errors/ForbiddenError.js';
 import { UserRole } from '../../shared/constants/enums.js';
+import { ForbiddenError } from '../../shared/errors/ForbiddenError.js';
+import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+
+/**
+ * @desc    Create user
+ * @route   POST /api/v1/users
+ * @access  Private (Admin)
+ */
+export const createUser = asyncHandler(async (req, res) => {
+  const { email, password, firstName, lastName, phone, role } = req.body;
+
+  const user = await User.create({
+    email,
+    passwordHash: password,
+    firstName,
+    lastName,
+    phone,
+    role,
+  });
+
+  const userResponse = user.toObject();
+  delete userResponse.passwordHash;
+
+  res.status(201).json({ success: true, data: userResponse });
+});
 
 /**
  * @desc    Get all users
@@ -46,7 +69,9 @@ export const updateUser = asyncHandler(async (req, res) => {
     runValidators: true,
   }).select('-passwordHash');
 
-  if (!user) throw new NotFoundError('المستخدم غير موجود');
+  if (!user) {
+    throw new NotFoundError('المستخدم غير موجود');
+  }
 
   res.status(200).json({ success: true, data: user });
 });
@@ -66,7 +91,9 @@ export const changePassword = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(id).select('+passwordHash');
-  if (!user) throw new NotFoundError('المستخدم غير موجود');
+  if (!user) {
+    throw new NotFoundError('المستخدم غير موجود');
+  }
 
   if (!(await user.comparePassword(oldPassword))) {
     throw new ForbiddenError('كلمة المرور القديمة غير صحيحة');
@@ -76,5 +103,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   user.tokenVersion += 1; // Invalidate all active sessions
   await user.save();
 
-  res.status(200).json({ success: true, message: 'تم تغيير كلمة المرور بنجاح' });
+  res
+    .status(200)
+    .json({ success: true, message: 'تم تغيير كلمة المرور بنجاح' });
 });

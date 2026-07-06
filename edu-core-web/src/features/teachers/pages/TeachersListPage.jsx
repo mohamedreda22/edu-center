@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import { Plus, Edit, Trash2, FileUp } from 'lucide-react';
+import React, { useState } from 'react';
+
+import TeacherFormDialog from '../components/TeacherFormDialog';
+import { teacherApi } from '../services/teacherApi';
+
+import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 import DataTable from '@/shared/components/DataTable/DataTable';
+import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
 import { Button } from '@/shared/components/ui/button';
-import { Plus, Edit, Trash2, FileUp } from 'lucide-react';
-import { teacherApi } from '../services/teacherApi';
-import TeacherFormDialog from '../components/TeacherFormDialog';
-import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 
 const TeachersListPage = () => {
   const queryClient = useQueryClient();
@@ -120,7 +122,7 @@ const TeachersListPage = () => {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-           <SearchFilterBar
+          <SearchFilterBar
             onSearch={setSearch}
             placeholder="بحث بالكود أو القسم..."
           />

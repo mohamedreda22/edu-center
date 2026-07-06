@@ -1,10 +1,11 @@
 import express from 'express';
+
 import * as salaryController from './salary.controller.js';
+import { salarySchema, updateSalarySchema } from './salary.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
-import { salarySchema, updateSalarySchema } from './salary.validation.js';
-import { UserRole } from '../../shared/constants/enums.js';
 
 const router = express.Router();
 

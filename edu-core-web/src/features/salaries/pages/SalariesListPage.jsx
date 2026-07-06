@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PageHeader from '@/shared/components/PageHeader/PageHeader';
-import DataTable from '@/shared/components/DataTable/DataTable';
-import { Button } from '@/shared/components/ui/button';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { salaryApi } from '../services/salaryApi';
+import React, { useState } from 'react';
+
 import SalaryFormDialog from '../components/SalaryFormDialog';
+import { salaryApi } from '../services/salaryApi';
+
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
+import DataTable from '@/shared/components/DataTable/DataTable';
+import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import { Button } from '@/shared/components/ui/button';
 import { formatMoney } from '@/shared/utils/money';
 
 const SalariesListPage = () => {

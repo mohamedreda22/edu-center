@@ -6,8 +6,8 @@ import {
 } from 'react-router-dom';
 
 import RootLayout from './RootLayout';
-import ProtectedRoute from '../shared/components/ProtectedRoute';
 import { RootErrorBoundary } from '../shared/components/ErrorBoundary';
+import ProtectedRoute from '../shared/components/ProtectedRoute';
 
 // Lazy loading pages
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'));
@@ -48,199 +48,199 @@ const router = createBrowserRouter([
     path: '/',
     errorElement: <RootErrorBoundary />,
     children: [
-  {
-    path: '/login',
-    element: (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            Loading...
-          </div>
-        }
-      >
-        <LoginPage />
-      </Suspense>
-    ),
-  },
-  {
-    element: <RootLayout />,
-    children: [
       {
-        path: '/',
+        path: '/login',
         element: (
-          <ProtectedRoute>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Dashboard...
-                </div>
-              }
-            >
-              <DashboardPage />
-            </Suspense>
-          </ProtectedRoute>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                Loading...
+              </div>
+            }
+          >
+            <LoginPage />
+          </Suspense>
         ),
       },
       {
-        path: '/settings',
-        element: (
-          <ProtectedRoute>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Settings...
-                </div>
-              }
-            >
-              <SettingsPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
+        element: <RootLayout />,
+        children: [
+          {
+            path: '/',
+            element: (
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Dashboard...
+                    </div>
+                  }
+                >
+                  <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/settings',
+            element: (
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Settings...
+                    </div>
+                  }
+                >
+                  <SettingsPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/reports',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Reports...
+                    </div>
+                  }
+                >
+                  <ReportsPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/salaries',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Salaries...
+                    </div>
+                  }
+                >
+                  <SalariesListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/payroll',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Payroll...
+                    </div>
+                  }
+                >
+                  <PayrollListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/payments',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Payments...
+                    </div>
+                  }
+                >
+                  <PaymentsListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/scheduling',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST', 'TEACHER']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Schedule...
+                    </div>
+                  }
+                >
+                  <SchedulePage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/teachers',
+            element: (
+              <ProtectedRoute roles={['ADMIN']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Teachers...
+                    </div>
+                  }
+                >
+                  <TeachersListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/students',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Students...
+                    </div>
+                  }
+                >
+                  <StudentsListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/activity-log',
+            element: (
+              <ProtectedRoute roles={['ADMIN']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Logs...
+                    </div>
+                  }
+                >
+                  <ActivityLogPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/styleguide',
+            element: (
+              <ProtectedRoute roles={['ADMIN']}>
+                <Suspense fallback={<div>Loading Styleguide...</div>}>
+                  <StyleguidePage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+        ],
       },
       {
-        path: '/reports',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Reports...
-                </div>
-              }
-            >
-              <ReportsPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
+        path: '*',
+        element: <Navigate to="/" replace />,
       },
-      {
-        path: '/salaries',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Salaries...
-                </div>
-              }
-            >
-              <SalariesListPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/payroll',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Payroll...
-                </div>
-              }
-            >
-              <PayrollListPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/payments',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Payments...
-                </div>
-              }
-            >
-              <PaymentsListPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/scheduling',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST', 'TEACHER']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Schedule...
-                </div>
-              }
-            >
-              <SchedulePage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/teachers',
-        element: (
-          <ProtectedRoute roles={['ADMIN']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Teachers...
-                </div>
-              }
-            >
-              <TeachersListPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/students',
-        element: (
-          <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Students...
-                </div>
-              }
-            >
-              <StudentsListPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/activity-log',
-        element: (
-          <ProtectedRoute roles={['ADMIN']}>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  Loading Logs...
-                </div>
-              }
-            >
-              <ActivityLogPage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/styleguide',
-        element: (
-          <ProtectedRoute roles={['ADMIN']}>
-            <Suspense fallback={<div>Loading Styleguide...</div>}>
-              <StyleguidePage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-    ],
-  },
-  {
-    path: '*',
-    element: <Navigate to="/" replace />,
-  },
     ],
   },
 ]);

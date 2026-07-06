@@ -89,10 +89,12 @@ const Sidebar = () => {
               )
             }
           >
-            <item.icon className={cn(
-              "h-5 w-5 transition-transform duration-200",
-              "group-hover:scale-110"
-            )} />
+            <item.icon
+              className={cn(
+                'h-5 w-5 transition-transform duration-200',
+                'group-hover:scale-110'
+              )}
+            />
             {item.label}
           </NavLink>
         ))}

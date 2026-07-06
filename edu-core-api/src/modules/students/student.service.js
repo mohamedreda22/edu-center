@@ -1,17 +1,23 @@
-import Student from './student.model.js';
+import * as studentRepository from './student.repository.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { generateCode } from '../../shared/utils/atomicCounter.js';
+import { withTransaction } from '../../shared/utils/withTransaction.js';
 
 /**
  * Create a new student
  */
 export const createStudent = async (studentData) => {
-  const studentCode = await generateCode('studentCode', 'STD');
-  const student = await Student.create({
-    ...studentData,
-    studentCode,
+  return withTransaction(async (session) => {
+    const studentCode = await generateCode('studentCode', 'STD', session);
+    const [student] = await studentRepository.create(
+      {
+        ...studentData,
+        studentCode,
+      },
+      session
+    );
+    return student;
   });
-  return student;
 };
 
 /**
@@ -33,11 +39,12 @@ export const getAllStudents = async (query = {}) => {
   }
 
   const [students, total] = await Promise.all([
-    Student.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit)),
-    Student.countDocuments(filter),
+    studentRepository.find(filter, {
+      skip,
+      limit: Number(limit),
+      sort: { createdAt: -1 },
+    }),
+    studentRepository.countDocuments(filter),
   ]);
 
   return {
@@ -55,24 +62,18 @@ export const getAllStudents = async (query = {}) => {
  * Get student by ID
  */
 export const getStudentById = async (id) => {
-  const student = await Student.findById(id).populate(
-    'userId',
-    'firstName lastName email'
-  );
+  const student = await studentRepository.findById(id);
   if (!student) {
     throw new NotFoundError('الطالب غير موجود');
   }
-  return student;
+  return student.populate('userId', 'firstName lastName email');
 };
 
 /**
  * Update student
  */
 export const updateStudent = async (id, updateData) => {
-  const student = await Student.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: true,
-  });
+  const student = await studentRepository.findByIdAndUpdate(id, updateData);
   if (!student) {
     throw new NotFoundError('الطالب غير موجود');
   }
@@ -83,7 +84,7 @@ export const updateStudent = async (id, updateData) => {
  * Soft delete student
  */
 export const deleteStudent = async (id) => {
-  const student = await Student.findByIdAndUpdate(id, {
+  const student = await studentRepository.findByIdAndUpdate(id, {
     deletedAt: new Date(),
     status: 'WITHDRAWN',
   });

@@ -1,10 +1,11 @@
 import express from 'express';
+
 import * as paymentController from './payment.controller.js';
+import { paymentSchema, updatePaymentSchema } from './payment.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
-import { paymentSchema, updatePaymentSchema } from './payment.validation.js';
-import { UserRole } from '../../shared/constants/enums.js';
 
 const router = express.Router();
 

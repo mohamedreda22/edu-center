@@ -1,5 +1,5 @@
-import ActivityLog from '../../modules/activity-log/activityLog.model.js';
 import logger from './logger.js';
+import ActivityLog from '../../modules/activity-log/activityLog.model.js';
 
 export const logActivity = async ({
   userId,

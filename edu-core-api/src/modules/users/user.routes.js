@@ -1,15 +1,32 @@
 import express from 'express';
+
 import * as userController from './user.controller.js';
+import {
+  createUserSchema,
+  updateUserSchema,
+  changePasswordSchema,
+} from './user.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
-import { UserRole } from '../../shared/constants/enums.js';
+import { validate } from '../../shared/middlewares/validate.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
 router.get('/', authorize(UserRole.ADMIN), userController.getAllUsers);
-router.patch('/:id', userController.updateUser);
-router.post('/:id/change-password', userController.changePassword);
+router.post(
+  '/',
+  authorize(UserRole.ADMIN),
+  validate(createUserSchema),
+  userController.createUser
+);
+router.patch('/:id', validate(updateUserSchema), userController.updateUser);
+router.post(
+  '/:id/change-password',
+  validate(changePasswordSchema),
+  userController.changePassword
+);
 
 export default router;

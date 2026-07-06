@@ -1,6 +1,6 @@
-import Lesson from '../lessons/lesson.model.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { UserRole } from '../../shared/constants/enums.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import Lesson from '../lessons/lesson.model.js';
 
 /**
  * @desc    Get dashboard overview stats
@@ -154,7 +154,7 @@ export const getBySubjectReport = asyncHandler(async (req, res) => {
         grossValue: { $sum: '$lessonPrice' },
       },
     },
-    { $sort: { grossValue: -1 } }
+    { $sort: { grossValue: -1 } },
   ]);
 
   res.status(200).json({ success: true, data: report });
@@ -191,7 +191,7 @@ export const getByLevelReport = asyncHandler(async (req, res) => {
         grossValue: { $sum: '$lessonPrice' },
       },
     },
-    { $sort: { _id: 1 } }
+    { $sort: { _id: 1 } },
   ]);
 
   res.status(200).json({ success: true, data: report });
@@ -243,13 +243,16 @@ export const exportCSV = asyncHandler(async (req, res) => {
     { $unwind: '$user' },
   ]);
 
-  report.forEach(row => {
+  report.forEach((row) => {
     const name = `${row.user.firstName} ${row.user.lastName}`;
     csv += `${name},${row.totalLessons},${row.grossValue},${row.teacherShare},${row.instituteShare}\n`;
   });
 
   res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename=report-${month}-${year}.csv`);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename=report-${month}-${year}.csv`
+  );
   res.status(200).send(csv);
 });
 
@@ -259,6 +262,7 @@ export const exportCSV = asyncHandler(async (req, res) => {
 export const exportPDF = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'PDF export triggered. In a production environment, this would generate a PDF stream using a library like PDFKit or Puppeteer.'
+    message:
+      'PDF export triggered. In a production environment, this would generate a PDF stream using a library like PDFKit or Puppeteer.',
   });
 });

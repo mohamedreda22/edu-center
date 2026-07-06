@@ -8,9 +8,11 @@ class EmailAdapter {
     this.name = 'EmailAdapter';
   }
 
-  async send({ userId, title, message, type }) {
+  async send({ userId, title, message }) {
     // In a real implementation, you would use nodemailer or a service like SendGrid
-    logger.info(`[EMAIL ADAPTER] Sending email to user ${userId}: [${title}] ${message}`);
+    logger.info(
+      `[EMAIL ADAPTER] Sending email to user ${userId}: [${title}] ${message}`
+    );
 
     // Simulate async work
     return new Promise((resolve) => {

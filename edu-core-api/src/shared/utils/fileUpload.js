@@ -1,13 +1,18 @@
-import multer from 'multer';
-import path from 'path';
 import crypto from 'crypto';
+import path from 'path';
+
+import multer from 'multer';
+
 import { AppError } from '../errors/AppError.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let dest = 'uploads/';
-    if (file.fieldname === 'cv') dest += 'teachers/cv';
-    else if (file.fieldname === 'certificates') dest += 'teachers/certificates';
+    if (file.fieldname === 'cv') {
+      dest += 'teachers/cv';
+    } else if (file.fieldname === 'certificates') {
+      dest += 'teachers/certificates';
+    }
     cb(null, dest);
   },
   filename: (req, file, cb) => {

@@ -1,10 +1,11 @@
 import express from 'express';
+
 import * as teacherController from './teacher.controller.js';
+import { teacherSchema, updateTeacherSchema } from './teacher.validation.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
-import { teacherSchema, updateTeacherSchema } from './teacher.validation.js';
-import { UserRole } from '../../shared/constants/enums.js';
 import { upload } from '../../shared/utils/fileUpload.js';
 
 const router = express.Router();

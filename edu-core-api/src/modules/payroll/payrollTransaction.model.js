@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { PayrollAction } from '../../shared/constants/enums.js';
 
 const payrollTransactionSchema = new mongoose.Schema(

@@ -4,6 +4,11 @@ import { CompensationType } from '../../shared/constants/enums.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { ValidationError } from '../../shared/errors/ValidationError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
+import {
+  multiplyFils,
+  subtractFils,
+  toFils,
+} from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
@@ -50,13 +55,13 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 
     // 4. Calculate transport deduction (only if teacher uses institute car)
     // Business rule: Flat rate per lesson if using institute car
-    const TRANSPORT_RATE = 0.5; // Example constant, could be env-driven
+    const TRANSPORT_RATE = toFils(0.5); // Example constant, could be env-driven
     let transportDeductions = 0;
     if (teacher.usesInstituteCar) {
-      transportDeductions = completedLessons * TRANSPORT_RATE;
+      transportDeductions = multiplyFils(TRANSPORT_RATE, completedLessons);
     }
 
-    const finalAmount = teacherEarnings - transportDeductions;
+    const finalAmount = subtractFils(teacherEarnings, transportDeductions);
 
     // 5. Upsert PayrollRecord
     const payrollRecord = await PayrollRecord.findOneAndUpdate(

@@ -15,7 +15,7 @@ const paymentSchema = new mongoose.Schema(
       default: null,
     },
     amount: {
-      type: Number,
+      type: Number, // in fils
       required: [true, 'المبلغ مطلوب'],
       min: [0, 'المبلغ لا يمكن أن يكون أقل من 0'],
     },

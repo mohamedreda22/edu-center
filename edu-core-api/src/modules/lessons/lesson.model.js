@@ -49,7 +49,7 @@ const lessonSchema = new mongoose.Schema(
     },
     notes: String,
     lessonPrice: {
-      type: Number,
+      type: Number, // in fils
       required: true,
       min: 0,
     },
@@ -57,8 +57,14 @@ const lessonSchema = new mongoose.Schema(
     // Financial snapshot
     teacherPercentage: Number,
     institutePercentage: Number,
-    teacherEarnings: Number,
-    instituteRevenue: Number,
+    teacherEarnings: {
+      type: Number, // in fils
+      default: 0,
+    },
+    instituteRevenue: {
+      type: Number, // in fils
+      default: 0,
+    },
   },
   {
     timestamps: true,

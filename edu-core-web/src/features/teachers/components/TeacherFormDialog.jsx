@@ -9,6 +9,7 @@ import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { CommissionModel, Gender } from '@/shared/constants/enums';
+import { toKWD } from '@/shared/utils/money';
 
 const teacherSchema = z.object({
   userId: z.string().min(1, 'المستخدم مطلوب'),
@@ -63,7 +64,11 @@ const TeacherFormDialog = ({
 
   React.useEffect(() => {
     if (open) {
-      reset(initialData);
+      const data = { ...initialData };
+      if (data.hourlyRate !== undefined) {
+        data.hourlyRate = toKWD(data.hourlyRate);
+      }
+      reset(data);
     }
   }, [open, reset, initialData]);
 

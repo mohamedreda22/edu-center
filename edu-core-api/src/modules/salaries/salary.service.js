@@ -2,6 +2,7 @@ import TeacherSalary from './teacherSalary.model.js';
 import { CompensationType } from '../../shared/constants/enums.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { ValidationError } from '../../shared/errors/ValidationError.js';
+import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import Teacher from '../teachers/teacher.model.js';
 
@@ -21,7 +22,21 @@ export const createSalary = async (salaryData) => {
       );
     }
 
-    const [salary] = await TeacherSalary.create([salaryData], { session });
+    const data = { ...salaryData };
+    const fieldsToConvert = [
+      'hourlyRate',
+      'transportationAllowance',
+      'bonuses',
+      'deductions',
+      'totalSalary',
+    ];
+    fieldsToConvert.forEach((field) => {
+      if (data[field] !== undefined) {
+        data[field] = toFils(data[field]);
+      }
+    });
+
+    const [salary] = await TeacherSalary.create([data], { session });
     return salary;
   });
 };
@@ -45,7 +60,21 @@ export const getAllSalaries = async (query = {}) => {
 };
 
 export const updateSalary = async (id, updateData) => {
-  const salary = await TeacherSalary.findByIdAndUpdate(id, updateData, {
+  const data = { ...updateData };
+  const fieldsToConvert = [
+    'hourlyRate',
+    'transportationAllowance',
+    'bonuses',
+    'deductions',
+    'totalSalary',
+  ];
+  fieldsToConvert.forEach((field) => {
+    if (data[field] !== undefined) {
+      data[field] = toFils(data[field]);
+    }
+  });
+
+  const salary = await TeacherSalary.findByIdAndUpdate(id, data, {
     new: true,
     runValidators: true,
   });

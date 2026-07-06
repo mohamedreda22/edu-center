@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import React, { useState } from 'react';
 
+import AttendanceDialog from '../components/AttendanceDialog';
 import LessonFormDialog from '../components/LessonFormDialog';
 import WeekScheduleGrid from '../components/WeekScheduleGrid';
 import { schedulingApi } from '../services/schedulingApi';
@@ -12,6 +13,8 @@ import { Button } from '@/shared/components/ui/button';
 const SchedulePage = () => {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [attendanceOpen, setAttendanceOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
   const [error, setError] = useState(null);
 
   const { data, isLoading } = useQuery({
@@ -38,6 +41,20 @@ const SchedulePage = () => {
     createMutation.mutate({ ...formData, dayOfWeek });
   };
 
+  const markAttendanceMutation = useMutation({
+    mutationFn: (data) =>
+      schedulingApi.markAttendance(selectedLesson._id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['lessons']);
+      setAttendanceOpen(false);
+      setSelectedLesson(null);
+    },
+  });
+
+  const handleMarkAttendance = (formData) => {
+    markAttendanceMutation.mutate(formData);
+  };
+
   return (
     <div className="space-y-6 text-right" dir="rtl">
       <PageHeader title="الجدول الدراسي" description="عرض وحجز الحصص الدراسية">
@@ -54,7 +71,10 @@ const SchedulePage = () => {
       ) : (
         <WeekScheduleGrid
           lessons={data?.data || []}
-          onLessonClick={(l) => console.log('Lesson clicked:', l)}
+          onLessonClick={(l) => {
+            setSelectedLesson(l);
+            setAttendanceOpen(true);
+          }}
         />
       )}
 
@@ -64,6 +84,14 @@ const SchedulePage = () => {
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}
         error={error}
+      />
+
+      <AttendanceDialog
+        open={attendanceOpen}
+        onOpenChange={setAttendanceOpen}
+        lesson={selectedLesson}
+        onSubmit={handleMarkAttendance}
+        isSubmitting={markAttendanceMutation.isPending}
       />
     </div>
   );

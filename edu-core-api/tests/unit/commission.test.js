@@ -1,13 +1,14 @@
 import { calculateCommission } from '../../src/shared/services/commissionCalculator.js';
+import { toFils } from '../../src/shared/utils/money.js';
 
-describe('Commission Calculator', () => {
+describe('Commission Calculator (with fils)', () => {
   test('should calculate 70/30 split correctly', () => {
     const result = calculateCommission({
-      lessonPrice: 10,
+      lessonPrice: toFils(10),
       teacherPercentage: 0.7,
     });
-    expect(result.teacherEarnings).toBe(7);
-    expect(result.instituteRevenue).toBe(3);
+    expect(result.teacherEarnings).toBe(7000);
+    expect(result.instituteRevenue).toBe(3000);
   });
 
   test('should handle zero price', () => {
@@ -19,12 +20,13 @@ describe('Commission Calculator', () => {
     expect(result.instituteRevenue).toBe(0);
   });
 
-  test('should round to 3 decimal places (fils)', () => {
+  test('should round to nearest integer fil', () => {
     const result = calculateCommission({
-      lessonPrice: 10.1234,
+      lessonPrice: toFils(10.1234), // 10123 fils
       teacherPercentage: 0.7,
     });
-    expect(result.teacherEarnings).toBe(7.086);
-    expect(result.instituteRevenue).toBe(3.037);
+    // 10123 * 0.7 = 7086.1 => 7086
+    expect(result.teacherEarnings).toBe(7086);
+    expect(result.instituteRevenue).toBe(3037); // 10123 - 7086 = 3037
   });
 });

@@ -9,6 +9,7 @@ import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { PaymentStatus } from '@/shared/constants/enums';
+import { toKWD } from '@/shared/utils/money';
 
 const paymentSchema = z.object({
   studentId: z.string().min(1, 'يجب تحديد الطالب'),
@@ -48,7 +49,11 @@ const PaymentFormDialog = ({
 
   React.useEffect(() => {
     if (open) {
-      reset(initialData);
+      const data = { ...initialData };
+      if (data.amount !== undefined) {
+        data.amount = toKWD(data.amount);
+      }
+      reset(data);
     }
   }, [open, reset, initialData]);
 

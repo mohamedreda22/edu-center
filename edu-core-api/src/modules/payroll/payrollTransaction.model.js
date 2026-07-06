@@ -24,13 +24,13 @@ const payrollTransactionSchema = new mongoose.Schema(
       ref: 'User',
       default: null, // The staff member who performed the action
     },
-    lessonPrice: Number,
+    lessonPrice: { type: Number }, // in fils
     teacherPercentage: Number,
     institutePercentage: Number,
-    teacherEarnings: Number,
-    instituteRevenue: Number,
+    teacherEarnings: { type: Number }, // in fils
+    instituteRevenue: { type: Number }, // in fils
     transportDeduction: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     action: {

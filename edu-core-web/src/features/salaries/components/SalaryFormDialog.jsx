@@ -8,6 +8,7 @@ import { teacherApi } from '@/features/teachers/services/teacherApi';
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
+import { toKWD } from '@/shared/utils/money';
 
 const salarySchema = z.object({
   teacherId: z.string().min(1, 'يجب تحديد المعلم'),
@@ -70,7 +71,20 @@ const SalaryFormDialog = ({
 
   React.useEffect(() => {
     if (open) {
-      reset(initialData);
+      const data = { ...initialData };
+      const fieldsToConvert = [
+        'hourlyRate',
+        'transportationAllowance',
+        'bonuses',
+        'deductions',
+        'totalSalary',
+      ];
+      fieldsToConvert.forEach((field) => {
+        if (data[field] !== undefined) {
+          data[field] = toKWD(data[field]);
+        }
+      });
+      reset(data);
     }
   }, [open, reset, initialData]);
 

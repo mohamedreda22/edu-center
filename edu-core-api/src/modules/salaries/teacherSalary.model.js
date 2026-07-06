@@ -26,23 +26,23 @@ const teacherSalarySchema = new mongoose.Schema(
       default: 0,
     },
     hourlyRate: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     transportationAllowance: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     bonuses: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     deductions: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
     },
     totalSalary: {
-      type: Number,
+      type: Number, // in fils
       required: true,
     },
     paid: {

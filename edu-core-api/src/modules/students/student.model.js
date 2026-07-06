@@ -79,7 +79,7 @@ const studentSchema = new mongoose.Schema(
       default: StudentStatus.ACTIVE,
     },
     monthlyFee: {
-      type: Number,
+      type: Number, // in fils
       default: 0,
       min: 0,
     },

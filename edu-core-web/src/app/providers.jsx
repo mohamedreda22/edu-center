@@ -1,18 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 import { ThemeProvider } from './ThemeProvider';
 import { AuthProvider } from '../features/auth/AuthContext';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { queryClient } from '../shared/lib/queryClient';
 
 export const Providers = ({ children }) => {
   return (

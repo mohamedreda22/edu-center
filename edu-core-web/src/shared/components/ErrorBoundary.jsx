@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
 import React from 'react';
 import { useRouteError } from 'react-router-dom';
 
@@ -41,7 +41,7 @@ export const RootErrorBoundary = () => {
             </h2>
             <p className="text-gray-600 max-w-xs mx-auto font-medium leading-relaxed">
               نواجه مشكلة تقنية في تشغيل التطبيق. يرجى محاولة إعادة تحميل
-              الصفحة.
+              الصفحة أو العودة للرئيسية.
             </p>
 
             {process.env.NODE_ENV === 'development' && (
@@ -49,18 +49,32 @@ export const RootErrorBoundary = () => {
                 className="mt-4 p-3 bg-red-50 text-red-700 text-[10px] rounded-xl overflow-auto max-h-32 text-left font-mono"
                 dir="ltr"
               >
-                {error?.message || JSON.stringify(error)}
+                {error?.message ||
+                  (typeof error === 'string'
+                    ? error
+                    : JSON.stringify(error, Object.getOwnPropertyNames(error)))}
               </div>
             )}
           </div>
 
-          <Button
-            onClick={() => window.location.reload()}
-            className="w-full h-12 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 gap-2"
-          >
-            <RefreshCcw className="h-5 w-5" />
-            إعادة تحميل الصفحة
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() => window.location.reload()}
+              className="w-full h-12 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 gap-2"
+            >
+              <RefreshCcw className="h-5 w-5" />
+              إعادة تحميل الصفحة
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = '/')}
+              className="w-full h-12 rounded-xl text-lg font-bold transition-all duration-300 gap-2"
+            >
+              <Home className="h-5 w-5" />
+              العودة للرئيسية
+            </Button>
+          </div>
         </div>
       </main>
 

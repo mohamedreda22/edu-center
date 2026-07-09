@@ -42,6 +42,9 @@ const ActivityLogPage = lazy(
 const SettingsPage = lazy(
   () => import('../features/settings/pages/SettingsPage')
 );
+const ActivityLogPage = lazy(() =>
+  import('../features/activity-log/pages/ActivityLogPage')
+);
 const StyleguidePage = lazy(
   () => import('../features/dashboard/pages/StyleguidePage')
 );
@@ -80,6 +83,16 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/settings/activity-log',
+            element: (
+              <ProtectedRoute roles={['ADMIN']}>
+                <Suspense fallback={<div>جاري التحميل...</div>}>
+                  <ActivityLogPage />
                 </Suspense>
               </ProtectedRoute>
             ),

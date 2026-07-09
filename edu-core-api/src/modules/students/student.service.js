@@ -47,6 +47,7 @@ export const getAllStudents = async (query = {}) => {
       skip,
       limit: Number(limit),
       sort: { createdAt: -1 },
+      populate: { path: 'userId', select: 'firstName lastName email' },
     }),
     studentRepository.countDocuments(filter),
   ]);

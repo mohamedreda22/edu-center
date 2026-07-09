@@ -166,14 +166,11 @@ export const getAllLessons = async (query = {}) => {
     filter.lessonDate = { $gte: startOfDay, $lte: endOfDay };
   }
 
-  const lessons = await lessonRepository.find(filter);
+  const lessons = await lessonRepository.find(filter, {
+    populate: ['teacherId', 'studentId'],
+  });
 
-  // Manually populate since generic repository find doesn't support it directly
-  const populatedLessons = await Promise.all(
-    lessons.map((l) => l.populate(['teacherId', 'studentId']))
-  );
-
-  return populatedLessons.sort(
+  return lessons.sort(
     (a, b) =>
       a.lessonDate - b.lessonDate || a.startTime.localeCompare(b.startTime)
   );

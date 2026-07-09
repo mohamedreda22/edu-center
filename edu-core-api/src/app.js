@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -23,9 +27,15 @@ import userRoutes from './modules/users/user.routes.js';
 import { AppError } from './shared/errors/AppError.js';
 import logger from './shared/services/logger.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pkg = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8')
+);
+
 const app = express();
 
-// 1. Trust Proxy (needed for rate-limiting if behind a proxy like Nginx)
+// 1. Trust Proxy (appropriate for Hostinger Web Apps)
 app.set('trust proxy', 1);
 
 // 2. Security Middlewares
@@ -55,8 +65,14 @@ app.use(cookieParser());
 // 5. Compression
 app.use(compression());
 
+// Ensure Uploads Directory Exists
+const uploadDir = path.resolve(env.UPLOAD_PATH);
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Static Files for Uploads
-app.use('/uploads', express.static(env.UPLOAD_PATH));
+app.use('/uploads', express.static(uploadDir));
 
 // 6. Rate Limiting
 const limiter = rateLimit({
@@ -98,16 +114,37 @@ app.get('/robots.txt', (req, res) => {
   res.send('User-agent: *\nDisallow: /');
 });
 
-// 8. Health Check
-app.get('/health', (req, res) => {
-  const dbStatus =
-    mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+// 8. Root Endpoint
+app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'API is healthy',
+    service: 'Edu-Core API',
+    status: 'running',
+    version: pkg.version,
+    environment: env.NODE_ENV,
+    node: process.version,
+  });
+});
+
+// 9. Health Check
+app.get('/health', (req, res) => {
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting',
+  };
+
+  res.status(200).json({
+    success: true,
+    status: 'healthy',
+    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    env: env.NODE_ENV,
-    dbStatus,
+    environment: env.NODE_ENV,
+    nodeVersion: process.version,
+    mongodb: dbStates[mongoose.connection.readyState] || 'unknown',
+    memoryUsage: process.memoryUsage(),
+    pid: process.pid,
   });
 });
 

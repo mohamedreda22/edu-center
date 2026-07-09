@@ -12,6 +12,7 @@ import morgan from 'morgan';
 
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
+import { correlationIdMiddleware } from './shared/middlewares/correlation.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import courseRoutes from './modules/courses/course.routes.js';
 import groupRoutes from './modules/groups/group.routes.js';
@@ -35,7 +36,10 @@ const app = express();
 // 1. Trust Proxy (appropriate for Hostinger Web Apps)
 app.set('trust proxy', 1);
 
-// 2. Security Middlewares
+// 2. Correlation ID
+app.use(correlationIdMiddleware);
+
+// 3. Security Middlewares
 app.use(helmet());
 app.use(
   cors({
@@ -44,7 +48,7 @@ app.use(
   })
 );
 
-// 3. HTTP Request Logging (Morgan -> Winston)
+// 4. HTTP Request Logging (Morgan -> Winston)
 const morganFormat = env.NODE_ENV === 'development' ? 'dev' : 'combined';
 app.use(
   morgan(morganFormat, {
@@ -175,6 +179,7 @@ app.use((err, req, res, _next) => {
     error: {
       code: err.code || 'INTERNAL_ERROR',
       message: err.message || 'حدث خطأ داخلي في الخادم',
+      correlationId: req.correlationId,
     },
   };
 
@@ -184,9 +189,17 @@ app.use((err, req, res, _next) => {
 
   // Log error
   if (err.statusCode >= 500) {
-    logger.error(`${err.message}`, err);
+    logger.error(`${err.message}`, {
+      correlationId: req.correlationId,
+      stack: err.stack,
+      url: req.originalUrl,
+      method: req.method,
+    });
   } else {
-    logger.warn(`${err.statusCode} - ${err.message}`);
+    logger.warn(`${err.statusCode} - ${err.message}`, {
+      correlationId: req.correlationId,
+      url: req.originalUrl,
+    });
   }
 
   if (env.NODE_ENV === 'development') {

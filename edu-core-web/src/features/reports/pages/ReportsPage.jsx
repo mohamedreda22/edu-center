@@ -74,6 +74,11 @@ const ReportsPage = () => {
     setYear(y);
   };
 
+  const setToThisYear = () => {
+    const now = new Date();
+    setYear(now.getFullYear());
+  };
+
   const teacherColumns = [
     { header: 'المعلم', accessor: 'teacherName' },
     { header: 'عدد الحصص', accessor: 'totalLessons' },
@@ -146,6 +151,9 @@ const ReportsPage = () => {
             </Button>
             <Button variant="ghost" size="sm" onClick={setToLastMonth}>
               الشهر الماضي
+            </Button>
+            <Button variant="ghost" size="sm" onClick={setToThisYear}>
+              السنة الحالية
             </Button>
           </div>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>

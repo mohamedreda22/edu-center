@@ -36,9 +36,6 @@ const SalariesListPage = lazy(
   () => import('../features/salaries/pages/SalariesListPage')
 );
 const ReportsPage = lazy(() => import('../features/reports/pages/ReportsPage'));
-const ActivityLogPage = lazy(
-  () => import('../features/activity-log/pages/ActivityLogPage')
-);
 const SettingsPage = lazy(
   () => import('../features/settings/pages/SettingsPage')
 );

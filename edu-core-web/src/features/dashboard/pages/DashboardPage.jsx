@@ -22,6 +22,10 @@ import { Skeleton } from '@/shared/components/ui/skeleton';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+
+  const isTeacher = user?.role === 'TEACHER';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
@@ -30,7 +34,7 @@ const DashboardPage = () => {
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: () => activityLogApi.getLogs({ limit: 5 }),
-    enabled: isAdmin,
+    enabled: !!isAdmin,
   });
 
   if (isError) {
@@ -38,8 +42,6 @@ const DashboardPage = () => {
   }
 
   const stats = data?.data || {};
-  const isTeacher = user?.role === 'TEACHER';
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
 
   return (
     <div className="space-y-8 text-right" dir="rtl">

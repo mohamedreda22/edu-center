@@ -40,11 +40,14 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       format: env.NODE_ENV === 'development' ? consoleFormat : productionFormat,
+      stderrLevels: ['error'],
     }),
   ],
 });
 
-if (env.NODE_ENV === 'production') {
+// File logging is disabled in production to optimize for Hostinger Runtime Logs
+// and avoid potential disk space/permission issues.
+if (env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' })
   );

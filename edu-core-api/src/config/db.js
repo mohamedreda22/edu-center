@@ -5,26 +5,30 @@ import logger from '../shared/services/logger.js';
 
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(env.MONGO_URI);
+    const options = {
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      socketTimeoutMS: 45000,
+    };
+
+    const conn = await mongoose.connect(env.MONGO_URI, options);
     logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);
 
-    // Check if replica set is enabled
-    const admin = mongoose.connection.db.admin();
-    const status = await admin.replSetGetStatus().catch(() => null);
+    // Simplified connection monitoring
+    mongoose.connection.on('error', (err) => {
+      logger.error(`❌ MongoDB connection error: ${err}`);
+    });
 
-    if (!status) {
-      logger.warn(
-        '⚠️ WARNING: MongoDB is NOT running as a replica set. Transactions will not work.'
-      );
-      if (env.NODE_ENV === 'production') {
-        logger.error('❌ ERROR: Replica set is required for production.');
-        process.exit(1);
-      }
-    } else {
-      logger.info('✅ MongoDB Replica Set detected. Transactions are enabled.');
-    }
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+    });
+
+    return conn;
   } catch (error) {
-    logger.error(`❌ Error: ${error.message}`);
-    process.exit(1);
+    logger.error(`❌ MongoDB initial connection error: ${error.message}`);
+    // Do not exit process here, let the caller handle it if necessary
+    throw error;
   }
 };

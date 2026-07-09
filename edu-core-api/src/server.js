@@ -7,16 +7,19 @@ import {
   triggerPaymentReminders,
 } from './shared/services/notificationTriggers.service.js';
 
-const startServer = async () => {
-  try {
-    // Connect to Database
-    await connectDB();
+const PORT = env.PORT || 5000;
 
-    const PORT = env.PORT || 5000;
-    const server = app.listen(PORT, () => {
-      logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+// 1. Start listening IMMEDIATELY to satisfy Hostinger's 3s timeout
+const server = app.listen(PORT, () => {
+  logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
 
-      // Setup simple daily check for notifications (mocking a cron job)
+  // 2. Perform background initializations AFTER listen()
+  const initializeApp = async () => {
+    try {
+      // Connect to Database
+      await connectDB();
+
+      // Setup simple daily check for notifications
       const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
       setInterval(async () => {
         try {
@@ -27,37 +30,47 @@ const startServer = async () => {
         }
       }, CHECK_INTERVAL);
 
-      // Also run once on startup in dev
-      if (env.NODE_ENV === 'development') {
-        triggerLessonReminders().catch((err) =>
-          logger.error('Startup Lesson Reminder failed:', err)
-        );
-        triggerPaymentReminders().catch((err) =>
-          logger.error('Startup Payment Reminder failed:', err)
-        );
-      }
-    });
+      // Run once on startup (non-blocking)
+      triggerLessonReminders().catch((err) =>
+        logger.error('Startup Lesson Reminder failed:', err)
+      );
+      triggerPaymentReminders().catch((err) =>
+        logger.error('Startup Payment Reminder failed:', err)
+      );
 
-    // Handle Unhandled Rejections
-    process.on('unhandledRejection', (err) => {
-      logger.error('❌ UNHANDLED REJECTION! Shutting down...');
-      logger.error(err.name, err.message);
-      server.close(() => {
-        process.exit(1);
-      });
-    });
+      logger.info('✅ Background initializations complete');
+    } catch (error) {
+      logger.error('❌ Background initialization failed:', error);
+      // We don't exit here to keep the server alive even if DB is temporarily down,
+      // though most routes will fail until DB is up.
+    }
+  };
 
-    // Handle Sigterm
-    process.on('SIGTERM', () => {
-      logger.info('👋 SIGTERM RECEIVED. Shutting down gracefully');
-      server.close(() => {
-        logger.info('💥 Process terminated!');
-      });
-    });
-  } catch (error) {
-    logger.error('❌ Failed to start server:', error);
+  initializeApp();
+});
+
+// Handle Unhandled Rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('❌ UNHANDLED REJECTION! Shutting down...');
+  logger.error(err.name, err.message);
+  server.close(() => {
     process.exit(1);
-  }
-};
+  });
+});
 
-startServer();
+// Handle Uncaught Exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('❌ UNCAUGHT EXCEPTION! Shutting down...');
+  logger.error(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Handle Sigterm
+process.on('SIGTERM', () => {
+  logger.info('👋 SIGTERM RECEIVED. Shutting down gracefully');
+  server.close(() => {
+    logger.info('💥 Process terminated!');
+  });
+});

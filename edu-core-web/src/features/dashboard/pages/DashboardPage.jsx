@@ -5,11 +5,13 @@ import {
   Calendar,
   GraduationCap,
   CheckCircle,
+  Activity,
 } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { dashboardApi } from '../services/dashboardApi';
+import { activityLogApi } from '@/features/activity-log/services/activityLogApi';
 
 import { useAuth } from '@/features/auth/AuthContext';
 import ErrorState from '@/shared/components/ErrorState/ErrorState';
@@ -23,6 +25,12 @@ const DashboardPage = () => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
+  });
+
+  const { data: logsData, isLoading: logsLoading } = useQuery({
+    queryKey: ['recent-activity'],
+    queryFn: () => activityLogApi.getLogs({ limit: 5 }),
+    enabled: isAdmin,
   });
 
   if (isError) {
@@ -153,12 +161,51 @@ const DashboardPage = () => {
           </div>
         )}
 
-        <div className="p-10 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center space-y-2">
-          <Users className="h-8 w-8 text-muted-foreground/50" />
-          <h3 className="font-medium text-muted-foreground">أحدث النشاطات</h3>
-          <p className="text-sm text-muted-foreground/60 italic">
-            سيتم عرض سجل النشاطات هنا فور اكتمال وحدة سجل النظام (Milestone 13)
-          </p>
+        <div className="bg-card border rounded-xl p-6 space-y-4 shadow-sm">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            أحدث النشاطات
+          </h3>
+          <div className="space-y-3">
+            {logsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))
+            ) : logsData?.data?.length > 0 ? (
+              logsData.data.map((log) => (
+                <div
+                  key={log._id}
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-muted/50 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Activity className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold">
+                        {log.userId?.firstName} {log.userId?.lastName}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {log.action} - {log.entityType}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-left text-[10px] text-muted-foreground font-medium">
+                    {new Date(log.createdAt).toLocaleTimeString('ar-KW')}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground italic text-center py-8">
+                لا توجد نشاطات مسجلة حالياً
+              </p>
+            )}
+            {isAdmin && (
+              <Button asChild variant="link" className="w-full text-xs">
+                <Link to="/settings/activity-log">عرض السجل الكامل</Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

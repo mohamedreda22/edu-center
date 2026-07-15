@@ -42,13 +42,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const refresh = useCallback(async () => {
-    return refreshOnce(async () => {
-      const { data } = await authApi.refresh();
+  const refresh = useCallback(async (source = 'Other') => {
+    return refreshOnce(async (src, instanceId) => {
+      const { data } = await authApi.refresh(src, instanceId);
       setUser(data.user);
       setAccessToken(data.accessToken);
       return data.accessToken;
-    }).catch((error) => {
+    }, source).catch((error) => {
       setUser(null);
       setAccessToken(null);
 
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       console.log(`[AUTH_CONTEXT_INIT_AUTH] Initializing auth...`);
       try {
-        await refresh();
+        await refresh('AuthContextInit');
       } catch {
         // Silent fail - user just needs to login
       } finally {

@@ -145,14 +145,12 @@ export const bootstrapRBAC = async (tenantId) => {
             name: roleDef.name,
             description: roleDef.description,
             permissions: roleDef.permissions,
-            tenantId   // ensure it's set
+            tenantId: tenantId
           },
-          {
-            upsert: true,
+          { 
+            upsert: true, 
             new: true,
-            runValidators: true,
-            setDefaultsOnInsert: true,
-            strict: false
+            strict: false 
           }
         );
       }

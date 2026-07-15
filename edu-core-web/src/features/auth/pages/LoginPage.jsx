@@ -27,6 +27,13 @@ const LoginPage = () => {
   const location = useLocation();
   const [error, setError] = React.useState(null);
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') === 'true') {
+      setError('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+    }
+  }, [location]);
+
   const {
     register,
     handleSubmit,

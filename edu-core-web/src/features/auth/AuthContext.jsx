@@ -57,6 +57,11 @@ export const AuthProvider = ({ children }) => {
         console.error(`[AUTH_CONTEXT_REFRESH_FAILED] Caller ID: ${callerId}`, error);
         setUser(null);
         setAccessToken(null);
+
+        // Safely redirect to login without crashing the frontend render tree
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login?expired=true';
+        }
         throw error;
       } finally {
         activeRefreshPromise = null;

@@ -1,4 +1,8 @@
 import mongoose from 'mongoose';
+import { multiTenantPlugin } from '../shared/mongoose/multiTenantPlugin.js';
+
+// Ensure the multi-tenant plugin is registered globally on Mongoose
+mongoose.plugin(multiTenantPlugin);
 
 import { env } from './env.js';
 import logger from '../shared/services/logger.js';

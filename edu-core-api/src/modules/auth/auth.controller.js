@@ -14,13 +14,9 @@ const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    // Using 'lax' instead of 'none' in production because the frontend and backend share the registrable domain (flowship.site),
-    // which makes them Same-Site. 'lax' prevents modern browsers (Safari ITP, Chrome third-party cookie restrictions, and
-    // Incognito modes) from blocking or omitting the cookie, whilst retaining defense against cross-site CSRF.
-    sameSite: 'lax',
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge,
-    // Only set domain in production to prevent browsers from rejecting cookies on 'localhost' or local testing IPs.
-    domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
+    domain: env.COOKIE_DOMAIN || undefined,
   });
 };
 
@@ -31,8 +27,8 @@ const clearRefreshCookie = (res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: env.COOKIE_DOMAIN || undefined,
   });
 };
 
@@ -76,6 +72,44 @@ export const login = asyncHandler(async (req, res) => {
  * @route   POST /api/v1/auth/refresh
  */
 export const refresh = asyncHandler(async (req, res) => {
+  // --- REFRESH ENDPOINT INSTRUMENTATION DIAGNOSTICS ---
+  console.log('--- REFRESH ENDPOINT DIAGNOSTICS ---');
+
+  // 1. Log req.headers.cookie (Masking token value for security)
+  if (req.headers.cookie) {
+    const maskedCookieHeader = req.headers.cookie.replace(/refreshToken=[a-zA-Z0-9]+/g, (match) => {
+      const parts = match.split('=');
+      const val = parts[1] || '';
+      const masked = val.length > 8 ? `${val.slice(0, 4)}...${val.slice(-4)}` : '***';
+      return `refreshToken=${masked} (length: ${val.length})`;
+    });
+    console.log('HEADERS COOKIE:', maskedCookieHeader);
+  } else {
+    console.log('HEADERS COOKIE: Undefined/Missing');
+  }
+
+  // 2. Log req.cookies (Masking parsed refreshToken if present)
+  if (req.cookies) {
+    const cookieKeys = Object.keys(req.cookies);
+    console.log('PARSED COOKIES KEYS:', cookieKeys);
+    if (req.cookies.refreshToken) {
+      const val = req.cookies.refreshToken;
+      const masked = val.length > 8 ? `${val.slice(0, 4)}...${val.slice(-4)}` : '***';
+      console.log('PARSED COOKIES REFRESH TOKEN:', `${masked} (length: ${val.length})`);
+    } else {
+      console.log('PARSED COOKIES REFRESH TOKEN: Undefined/Missing');
+    }
+  } else {
+    console.log('PARSED COOKIES: Undefined');
+  }
+
+  // 3. Log origin, host, and referer
+  console.log('ORIGIN:', req.headers.origin || 'Undefined/Missing');
+  console.log('HOST:', req.headers.host || 'Undefined/Missing');
+  console.log('REFERER:', req.headers.referer || 'Undefined/Missing');
+  console.log('--------------------------------------');
+  // --- END INSTRUMENTATION DIAGNOSTICS ---
+
   const { refreshToken } = req.cookies;
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');

@@ -5,10 +5,12 @@ let refreshPromise = null;
  * active network request (single-flight) at any given moment.
  *
  * @param {Function} performRefreshCall - The actual asynchronous API call function
+ * @param {string} source - The source invoking the refresh request
+ * @param {string} instanceId - A unique ID for the request
  * @returns {Promise} Resolves with the refresh result
  */
-export function refreshOnce(performRefreshCall) {
-  const refreshId = Math.random().toString(36).substring(2, 11);
+export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
+  const refreshId = instanceId || Math.random().toString(36).substring(2, 11);
   const timestamp = new Date().toISOString();
   const callerStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
 
@@ -19,6 +21,7 @@ export function refreshOnce(performRefreshCall) {
       refreshId,
       timestamp,
       reusedPromise: true,
+      source,
     });
     return refreshPromise;
   }
@@ -29,9 +32,11 @@ export function refreshOnce(performRefreshCall) {
     refreshId,
     timestamp,
     reusedPromise: false,
+    source,
+    stackTrace: new Error().stack,
   });
 
-  refreshPromise = performRefreshCall()
+  refreshPromise = performRefreshCall(source, refreshId)
     .then((result) => {
       console.info({
         event: 'REFRESH_REQUEST_COMPLETED',
@@ -39,6 +44,7 @@ export function refreshOnce(performRefreshCall) {
         refreshId,
         timestamp: new Date().toISOString(),
         status: 'success',
+        source,
       });
       return result;
     })
@@ -49,6 +55,7 @@ export function refreshOnce(performRefreshCall) {
         refreshId,
         timestamp: new Date().toISOString(),
         error: error.message || error,
+        source,
       });
       throw error;
     })

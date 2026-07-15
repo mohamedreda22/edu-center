@@ -8,8 +8,12 @@ export const authApi = {
     return response.data;
   },
 
-  refresh: async () => {
+  refresh: async (source = 'Other', instanceId) => {
     const response = await apiClient.post('/v1/auth/refresh', {}, {
+      headers: {
+        'X-Refresh-Source': source,
+        'X-Refresh-Instance': instanceId || Math.random().toString(36).substring(2, 11),
+      },
       withCredentials: true,
     });
     return response.data;

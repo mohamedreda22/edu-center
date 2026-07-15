@@ -124,7 +124,7 @@ apiClient.interceptors.response.use(
 
       try {
         console.log(`[INTERCEPTOR_TRIGGER_REFRESH] Triggering token refresh via unified refreshAuthToken...`);
-        const newToken = await refreshAuthToken();
+        const newToken = await refreshAuthToken('AxiosInterceptor');
         console.log(`[INTERCEPTOR_REFRESH_SUCCESS] Successfully refreshed token.`);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         originalRequest.withCredentials = true;

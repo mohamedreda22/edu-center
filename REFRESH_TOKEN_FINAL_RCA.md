@@ -26,16 +26,16 @@
 
 ---
 
-## 2. Unification Architecture: Standing up standalone `refreshManager.js`
+## 2. Solution Architecture: Centralized `refreshManager.js`
 
-We decoupled the single-flight refresh Promise lock entirely from both React component lifecycle and Axios state, centralizing it in a standalone ES module `refreshManager.js`:
+To guarantee that **exactly ONE** active refresh request can ever be on the wire across all contexts, we decoupled the single-flight logic entirely from React's component state and lifecycle into a centralized ES module:
 
 ### standalone central module: `edu-core-web/src/shared/services/refreshManager.js`
 ```javascript
 let refreshPromise = null;
 
-export function refreshOnce(performRefreshCall) {
-  const refreshId = Math.random().toString(36).substring(2, 11);
+export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
+  const refreshId = instanceId || Math.random().toString(36).substring(2, 11);
   const timestamp = new Date().toISOString();
   const callerStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
 
@@ -46,6 +46,7 @@ export function refreshOnce(performRefreshCall) {
       refreshId,
       timestamp,
       reusedPromise: true,
+      source,
     });
     return refreshPromise;
   }
@@ -56,9 +57,11 @@ export function refreshOnce(performRefreshCall) {
     refreshId,
     timestamp,
     reusedPromise: false,
+    source,
+    stackTrace: new Error().stack,
   });
 
-  refreshPromise = performRefreshCall()
+  refreshPromise = performRefreshCall(source, refreshId)
     .then((result) => {
       console.info({
         event: 'REFRESH_REQUEST_COMPLETED',
@@ -66,6 +69,7 @@ export function refreshOnce(performRefreshCall) {
         refreshId,
         timestamp: new Date().toISOString(),
         status: 'success',
+        source,
       });
       return result;
     })
@@ -76,6 +80,7 @@ export function refreshOnce(performRefreshCall) {
         refreshId,
         timestamp: new Date().toISOString(),
         error: error.message || error,
+        source,
       });
       throw error;
     })
@@ -96,8 +101,8 @@ export function getRefreshPromise() {
 ```
 
 ### Complete Lock Unification across Callers
-1. **AuthProvider Initializer & Hooks:** Re-routed `AuthContext.jsx`'s `refresh()` callback to invoke `refreshOnce` wrapping the actual `authApi.refresh()` call.
-2. **Axios Response Interceptor:** Completely removed the local `isRefreshing` variable and `failedQueue` array from `apiClient.js`. If a 401 occurs and a refresh is already running, the interceptor retrieves the active singleton promise `getRefreshPromise()` and chains directly off it, ensuring absolute single-flight synchronization.
+1. **AuthProvider Initializer & Hooks:** Re-routed `AuthContext.jsx`'s `refresh()` callback to invoke `refreshOnce` wrapping the actual `authApi.refresh()` call, passing source parameter `AuthContextInit`.
+2. **Axios Response Interceptor:** Completely removed the local `isRefreshing` variable and `failedQueue` array from `apiClient.js`. If a 401 occurs and a refresh is already running, the interceptor retrieves the active singleton promise `getRefreshPromise()` and chains directly off it, ensuring absolute single-flight synchronization, passing source parameter `AxiosInterceptor`.
 3. **Ref-based Callback Injection Optimization:** Overhauled `AuthContext.jsx`'s `injectAuthFunctions` injection mechanism. By storing `accessToken` in a React `useRef`, we created a stable `getAccessToken` callback with `[]` dependencies. This allows us to run `injectAuthFunctions` exactly once on mount, preventing repeated re-registration on token updates.
 
 ---
@@ -113,7 +118,8 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
     "caller": "at initAuth (AuthContext.jsx:70)",
     "refreshId": "3g7h8a",
     "timestamp": "2026-07-15T16:58:16.211Z",
-    "reusedPromise": false
+    "reusedPromise": false,
+    "source": "AuthContextInit"
   }
   ```
 - **Call 2 (Concurrently Reuses Lock):**
@@ -123,7 +129,8 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
     "caller": "at apiClient.js:107",
     "refreshId": "4v1p2q",
     "timestamp": "2026-07-15T16:58:16.212Z",
-    "reusedPromise": true
+    "reusedPromise": true,
+    "source": "AxiosInterceptor"
   }
   ```
 - **Completion (Resolves both callers synchronously with 1 HTTP call):**
@@ -133,7 +140,8 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
     "caller": "refreshOnce",
     "refreshId": "3g7h8a",
     "timestamp": "2026-07-15T16:58:16.915Z",
-    "status": "success"
+    "status": "success",
+    "source": "AuthContextInit"
   }
   ```
 
@@ -147,6 +155,8 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
 - **`edu-core-web/src/shared/services/apiClient.js`**: Replaced isolated local locks and failed queues with direct, synchronized dependency on the centralized `refreshManager`.
 - **`edu-core-api/src/shared/services/tokenService.js`**: Enhanced secure backend trace outputs showing exact revoked and rotated state parameters.
 - **`edu-core-web/src/features/auth/pages/LoginPage.jsx`**: Added native query parameter detection to display the elegant Arabic expired-session message cleanly.
+- **`edu-core-web/src/features/auth/services/authApi.js`**: Added header injection mapping `X-Refresh-Source` and `X-Refresh-Instance` so backend receives caller origins exactly.
+- **`edu-core-api/src/modules/auth/auth.controller.js`**: Overhauled `/refresh` route controller to cleanly capture and log incoming caller telemetry headers.
 
 ### Concurrency, Verification and Tests:
 - Standard integration test suite passed perfectly:

@@ -12,7 +12,10 @@ import { CommissionModel, Gender } from '@/shared/constants/enums';
 import { toKWD } from '@/shared/utils/money';
 
 const teacherSchema = z.object({
-  userId: z.string().min(1, 'المستخدم مطلوب'),
+  userId: z
+    .string()
+    .min(1, 'المستخدم مطلوب')
+    .regex(/^[0-9a-fA-F]{24}$/, 'رقم المستخدم غير صالح (يجب أن يكون معرفاً من 24 حرفاً)'),
   whatsapp: z.string().optional(),
   civilId: z.string().optional(),
   department: z.string().optional(),

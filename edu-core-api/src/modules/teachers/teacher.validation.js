@@ -7,7 +7,9 @@ import {
 } from '../../shared/constants/enums.js';
 
 export const teacherSchema = z.object({
-  userId: z.string({ required_error: 'رقم المستخدم مطلوب' }),
+  userId: z
+    .string({ required_error: 'رقم المستخدم مطلوب' })
+    .regex(/^[0-9a-fA-F]{24}$/, 'رقم المستخدم غير صالح (يجب أن يكون المعرف 24 حرفاً بالنظام الست عشري)'),
   whatsapp: z.string().optional(),
   civilId: z.string().optional(),
   subjects: z.array(z.string()).optional(),

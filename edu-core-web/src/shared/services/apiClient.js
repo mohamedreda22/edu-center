@@ -34,6 +34,21 @@ const apiClient = axios.create({
 // Explicitly reinforce withCredentials defaults on the client instance
 apiClient.defaults.withCredentials = true;
 
+// Map to track active request AbortControllers
+const activeControllers = new Set();
+
+export const abortAllPendingRequests = () => {
+  console.info('[EVIDENCE_TRACE] Aborting all pending API requests...');
+  for (const controller of activeControllers) {
+    try {
+      controller.abort();
+    } catch (e) {
+      console.error('Error aborting request:', e);
+    }
+  }
+  activeControllers.clear();
+};
+
 // To be injected from AuthProvider to avoid circular dependency
 let refreshAuthToken = null;
 let getAccessToken = null;
@@ -51,6 +66,22 @@ apiClient.interceptors.request.use(
     // Proactively enforce withCredentials on every single outgoing request
     config.withCredentials = true;
     const currentApiReqCount = ++apiRequestCounter;
+
+    // Support both original signal (e.g. from React Query) and global logout aborting
+    const controller = new AbortController();
+    const originalSignal = config.signal;
+    if (originalSignal) {
+      if (originalSignal.aborted) {
+        controller.abort();
+      } else {
+        originalSignal.addEventListener('abort', () => {
+          controller.abort();
+        });
+      }
+    }
+    config.signal = controller.signal;
+    config._controller = controller;
+    activeControllers.add(controller);
 
     // Attach tracing headers for all auth refresh requests
     if (config.url?.includes('/auth/refresh')) {
@@ -93,6 +124,11 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling and silent refresh
 apiClient.interceptors.response.use(
   (response) => {
+    const controller = response.config?._controller;
+    if (controller) {
+      activeControllers.delete(controller);
+    }
+
     const currentApiResCount = apiRequestCounter;
     console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
       traceEvent: 'AXIOS_RESPONSE_SUCCESS',
@@ -107,6 +143,11 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const controller = error.config?._controller;
+    if (controller) {
+      activeControllers.delete(controller);
+    }
+
     // Centralized error parsing attached directly to the rejected error object
     if (error) {
       error.parsed = parseApiError(error);

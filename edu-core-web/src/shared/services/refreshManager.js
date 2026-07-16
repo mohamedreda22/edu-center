@@ -48,7 +48,7 @@ if (authChannel) {
       const waiters = [...crossTabWaiters];
       crossTabWaiters = [];
       refreshPromise = null;
-      waiters.forEach(w => w.reject(new Error(payload.error || 'Refresh failed on leader tab')));
+      waiters.forEach(w => w.reject(new Error(payload?.error || 'Refresh failed on leader tab')));
     } else if (type === 'AUTH_LOGOUT') {
       console.info(`[CROSS_TAB] Tab ${senderTabId} logged out. Syncing local logout.`);
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
@@ -139,6 +139,7 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
       return result;
     })
     .catch((error) => {
+      const errorStr = error?.message || String(error);
       console.error('[EVIDENCE_TRACE] ' + JSON.stringify({
         traceEvent: 'REFRESH_PROMISE_FAILED',
         requestNumber: currentCount,
@@ -147,7 +148,7 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
         requestId: refreshId,
         tabId,
         source,
-        error: error.message || error,
+        error: errorStr,
       }, null, 2));
 
       // Broadcast failure to other tabs
@@ -155,7 +156,7 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
         authChannel.postMessage({
           type: 'REFRESH_FAILED',
           senderTabId: tabId,
-          payload: { error: error.message || error },
+          payload: { error: errorStr },
         });
       }
       throw error;
@@ -201,4 +202,8 @@ export function getRefreshPromise() {
 
 export function getTabId() {
   return tabId;
+}
+
+export function clearRefreshPromise() {
+  refreshPromise = null;
 }

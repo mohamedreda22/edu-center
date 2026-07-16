@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { studentSchema } from '../validations/studentSchema';
 
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
-import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { toKWD } from '@/shared/utils/money';
@@ -16,7 +15,6 @@ const StudentFormDialog = ({
   onSubmit,
   initialData,
   isSubmitting,
-  error,
 }) => {
   const {
     register,
@@ -66,17 +64,8 @@ const StudentFormDialog = ({
       <form
         id="student-form"
         onSubmit={handleSubmit(onFormSubmit)}
-        className="space-y-4 max-h-[60vh] overflow-y-auto px-1 text-right"
-        dir="rtl"
+        className="space-y-4 max-h-[60vh] overflow-y-auto px-1"
       >
-        {error && (
-          <ErrorAlert
-            title={error.parsed?.title || 'خطأ في حفظ البيانات'}
-            message={error.parsed?.message}
-            details={error.parsed?.details}
-          />
-        )}
-
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="parentName">اسم ولي الأمر</Label>

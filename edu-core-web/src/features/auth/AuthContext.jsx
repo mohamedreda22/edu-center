@@ -297,6 +297,13 @@ export const AuthProvider = ({ children }) => {
         window.localStorage &&
         window.localStorage.getItem('flowship_logged_in') === 'true';
 
+      console.info('[EVIDENCE_TRACE] initAuth check:', {
+        hasLoggedInFlag,
+        localStorageVal: typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('flowship_logged_in') : null,
+        currentPath: typeof window !== 'undefined' ? window.location.pathname : '',
+        allKeys: typeof window !== 'undefined' && window.localStorage ? Object.keys(window.localStorage) : []
+      });
+
       if (!hasLoggedInFlag) {
         console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
           traceEvent: 'INIT_AUTH_SKIPPED_ANONYMOUS',

@@ -139,6 +139,7 @@ export const getConversationsList = asyncHandler(async (req, res) => {
 
   recentMessages.forEach((msg) => {
     if (msg.type === 'DIRECT') {
+      if (!msg.senderId || !msg.recipientId) return;
       const otherUser = String(msg.senderId._id) === String(userId) ? msg.recipientId : msg.senderId;
       if (!otherUser) return;
 

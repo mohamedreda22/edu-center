@@ -23,7 +23,7 @@ import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/utils';
 
 const LoginPage = () => {
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [generalError, setGeneralError] = React.useState(null);
@@ -31,13 +31,13 @@ const LoginPage = () => {
   // Declarative navigation: wait until the virtual DOM and Context have fully committed
   // the authenticated user and token state, ensuring zero race conditions on the dashboard first render.
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !isLoading) {
       const timestamp = new Date().toISOString();
       console.info(`[EVIDENCE_TRACE] [${timestamp}] NAVIGATE_TO_DASHBOARD - User: ${user.id || user._id}`);
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, location]);
+  }, [isAuthenticated, user, isLoading, navigate, location]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);

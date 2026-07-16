@@ -5,6 +5,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 
+import { setGlobalNavigate } from '../shared/utils/navigation';
 import RootLayout from './RootLayout';
 import { RootErrorBoundary } from '../shared/components/ErrorBoundary';
 import ProtectedRoute from '../shared/components/ProtectedRoute';
@@ -367,6 +368,11 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+// Initialize navigation helper using the router instance directly
+setGlobalNavigate((path, options) => {
+  router.navigate(path, options);
+});
 
 export const AppRouter = () => {
   return <RouterProvider router={router} />;

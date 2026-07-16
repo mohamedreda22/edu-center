@@ -8,8 +8,11 @@ import React, {
 } from 'react';
 
 import { authApi } from './services/authApi';
-import { injectAuthFunctions } from '../../shared/services/apiClient';
-import { refreshOnce, broadcastLogin, broadcastLogout, getTabId } from '../../shared/services/refreshManager';
+import { injectAuthFunctions, abortAllPendingRequests } from '../../shared/services/apiClient';
+import { refreshOnce, broadcastLogin, broadcastLogout, getTabId, clearRefreshPromise } from '../../shared/services/refreshManager';
+import { queryClient } from '../../shared/lib/queryClient';
+import { globalNavigate } from '../../shared/utils/navigation';
+import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +21,9 @@ let authProviderRenders = 0;
 // Module-scoped bootstrap states to survive React StrictMode mounts/unmounts
 let bootstrapPromise = null;
 let hasBootstrapped = false;
+
+// Module-scoped flag to prevent duplicate toasts
+let isSessionExpiredToastShown = false;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -65,10 +71,65 @@ export const AuthProvider = ({ children }) => {
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
 
+  const performLogoutCleanup = useCallback(async (isSessionExpired = false) => {
+    console.info('[EVIDENCE_TRACE] Starting full application logout cleanup...');
+
+    // 1. Abort any pending authenticated requests
+    try {
+      abortAllPendingRequests();
+    } catch (e) {
+      console.error('Error aborting requests on logout:', e);
+    }
+
+    // 2. Clear any pending refresh promise
+    try {
+      clearRefreshPromise();
+    } catch (e) {
+      console.error('Error clearing refresh promise on logout:', e);
+    }
+
+    // 3. Cancel all pending React Query queries and clear the React Query cache
+    try {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+    } catch (e) {
+      console.error('Error clearing query client on logout:', e);
+    }
+
+    // 4. Clear local React authentication state
+    setUser(null);
+    setAccessToken(null);
+
+    // 5. Clear application stores/localStorage flags
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem('flowship_logged_in');
+    }
+
+    // 6. Broadcast logout to sync other tabs
+    broadcastLogout();
+
+    // 7. Show toast if session expired
+    if (isSessionExpired) {
+      if (!isSessionExpiredToastShown) {
+        isSessionExpiredToastShown = true;
+        toast.error('Your session has expired. Please sign in again.', {
+          onDismiss: () => { isSessionExpiredToastShown = false; },
+          onAutoClose: () => { isSessionExpiredToastShown = false; }
+        });
+      }
+      // 8. Redirect to login with expired query param
+      globalNavigate('/login?expired=true');
+    } else {
+      // If manual/normal logout, redirect to login page
+      globalNavigate('/login');
+    }
+  }, []);
+
   const login = async (credentials) => {
     const { data } = await authApi.login(credentials);
     setUser(data.user);
     setAccessToken(data.accessToken);
+    isSessionExpiredToastShown = false; // Reset toast flag on successful login
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem('flowship_logged_in', 'true');
     }
@@ -79,15 +140,12 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
+    } catch (err) {
+      console.error('Logout API call failed:', err);
     } finally {
-      setUser(null);
-      setAccessToken(null);
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('flowship_logged_in');
-      }
-      broadcastLogout();
+      await performLogoutCleanup(false);
     }
-  }, []);
+  }, [performLogoutCleanup]);
 
   const refresh = useCallback(async (source = 'Other') => {
     return refreshOnce(async (src, instanceId) => {
@@ -99,19 +157,19 @@ export const AuthProvider = ({ children }) => {
       }
       return data.accessToken;
     }, source).catch((error) => {
-      setUser(null);
-      setAccessToken(null);
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('flowship_logged_in');
-      }
-
-      // Safely redirect to login without crashing the frontend render tree
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        window.location.href = '/login?expired=true';
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (pathname !== '/login' && pathname !== '/') {
+        performLogoutCleanup(true);
+      } else {
+        setUser(null);
+        setAccessToken(null);
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.removeItem('flowship_logged_in');
+        }
       }
       throw error;
     });
-  }, []);
+  }, [performLogoutCleanup]);
 
   useEffect(() => {
     injectAuthFunctions(refresh, getAccessToken);

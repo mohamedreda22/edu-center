@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { multiTenantPlugin } from '../../shared/mongoose/multiTenantPlugin.js';
 
 const messageReadSchema = new mongoose.Schema({
   userId: {
@@ -49,13 +50,29 @@ const inboxMessageSchema = new mongoose.Schema(
       type: [messageReadSchema],
       default: [],
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: false,
+      index: true,
+    },
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      required: false,
+      index: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// Explicitly register multiTenantPlugin on schema
+inboxMessageSchema.plugin(multiTenantPlugin);
+
 // Performance indexes for instant chat loads
+inboxMessageSchema.index({ tenantId: 1, branchId: 1 });
 inboxMessageSchema.index({ senderId: 1, recipientId: 1 });
 inboxMessageSchema.index({ recipientId: 1 });
 inboxMessageSchema.index({ groupKey: 1 });

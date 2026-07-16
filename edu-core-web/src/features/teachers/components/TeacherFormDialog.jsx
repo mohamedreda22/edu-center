@@ -6,7 +6,6 @@ import { z } from 'zod';
 import AvailabilityPicker from './AvailabilityPicker';
 
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
-import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { CommissionModel, Gender } from '@/shared/constants/enums';
@@ -46,7 +45,6 @@ const TeacherFormDialog = ({
   onSubmit,
   initialData,
   isSubmitting,
-  error,
 }) => {
   const {
     register,
@@ -103,14 +101,6 @@ const TeacherFormDialog = ({
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-4 max-h-[60vh] overflow-y-auto px-1 text-right"
       >
-        {error && (
-          <ErrorAlert
-            title={error.parsed?.title || 'خطأ في حفظ البيانات'}
-            message={error.parsed?.message}
-            details={error.parsed?.details}
-          />
-        )}
-
         <div className="space-y-2">
           <Label htmlFor="userId">رقم المستخدم (ID)</Label>
           <Input

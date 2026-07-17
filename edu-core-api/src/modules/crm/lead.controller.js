@@ -9,9 +9,15 @@ export const getLeads = asyncHandler(async (req, res) => {
 
   const query = { tenantId };
 
-  if (stage) query.stage = stage;
-  if (source) query.source = source;
-  if (assignedTo) query.assignedTo = assignedTo;
+  if (stage) {
+    query.stage = stage;
+  }
+  if (source) {
+    query.source = source;
+  }
+  if (assignedTo) {
+    query.assignedTo = assignedTo;
+  }
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: 'i' } },
@@ -25,8 +31,14 @@ export const getLeads = asyncHandler(async (req, res) => {
 
   // Compute CRM pipeline metrics
   const totalLeadsCount = await Lead.countDocuments({ tenantId });
-  const convertedCount = await Lead.countDocuments({ tenantId, stage: 'CONVERTED' });
-  const conversionRate = totalLeadsCount > 0 ? ((convertedCount / totalLeadsCount) * 100).toFixed(1) : 0;
+  const convertedCount = await Lead.countDocuments({
+    tenantId,
+    stage: 'CONVERTED',
+  });
+  const conversionRate =
+    totalLeadsCount > 0
+      ? ((convertedCount / totalLeadsCount) * 100).toFixed(1)
+      : 0;
 
   res.status(200).json({
     success: true,
@@ -43,7 +55,8 @@ export const getLeads = asyncHandler(async (req, res) => {
 export const createLead = asyncHandler(async (req, res) => {
   const tenantId = req.user.tenantId;
   const branchId = req.user.branchId;
-  const { name, phone, source, campaign, priority, expectedValue, assignedTo } = req.body;
+  const { name, phone, source, campaign, priority, expectedValue, assignedTo } =
+    req.body;
 
   if (!name || !phone) {
     throw new AppError('الاسم ورقم الهاتف مطلوبان', 400);
@@ -84,7 +97,8 @@ export const createLead = asyncHandler(async (req, res) => {
 export const updateLead = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const tenantId = req.user.tenantId;
-  const { name, source, campaign, stage, priority, expectedValue, assignedTo } = req.body;
+  const { name, source, campaign, stage, priority, expectedValue, assignedTo } =
+    req.body;
 
   const lead = await Lead.findOne({ _id: id, tenantId });
   if (!lead) {
@@ -96,7 +110,11 @@ export const updateLead = asyncHandler(async (req, res) => {
 
   if (name && name !== lead.name) {
     updates.name = name;
-    timelineEntries.push({ action: 'تعديل الاسم', details: `تم تعديل الاسم إلى ${name}`, userId: req.user._id });
+    timelineEntries.push({
+      action: 'تعديل الاسم',
+      details: `تم تعديل الاسم إلى ${name}`,
+      userId: req.user._id,
+    });
   }
   if (source && source !== lead.source) {
     updates.source = source;
@@ -118,7 +136,10 @@ export const updateLead = asyncHandler(async (req, res) => {
   if (expectedValue !== undefined && expectedValue !== lead.expectedValue) {
     updates.expectedValue = expectedValue;
   }
-  if (assignedTo !== undefined && String(assignedTo) !== String(lead.assignedTo)) {
+  if (
+    assignedTo !== undefined &&
+    String(assignedTo) !== String(lead.assignedTo)
+  ) {
     updates.assignedTo = assignedTo;
     timelineEntries.push({
       action: 'تغيير الموظف المسؤول',
@@ -229,8 +250,12 @@ export const updateLeadFollowUp = asyncHandler(async (req, res) => {
     throw new AppError('المتابعة المطلوبة غير موجودة', 404);
   }
 
-  if (status) followUp.status = status;
-  if (notes) followUp.notes = notes;
+  if (status) {
+    followUp.status = status;
+  }
+  if (notes) {
+    followUp.notes = notes;
+  }
 
   lead.timeline.push({
     action: 'تحديث حالة المتابعة',

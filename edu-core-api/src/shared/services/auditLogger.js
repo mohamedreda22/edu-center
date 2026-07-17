@@ -1,5 +1,5 @@
-import AuditTrail from '../../modules/activity-log/auditTrail.model.js';
 import logger from './logger.js';
+import AuditTrail from '../../modules/activity-log/auditTrail.model.js';
 
 /**
  * Enterprise Audit Trail Logger Helper
@@ -14,16 +14,22 @@ import logger from './logger.js';
  * @param {Object} [auditDetails.afterState] Document state post modification
  * @param {string} [auditDetails.reason] Custom explanation of the action
  */
-export const logAuditTrail = async (req, { action, entityType, entityId, beforeState, afterState, reason }) => {
+export const logAuditTrail = async (
+  req,
+  { action, entityType, entityId, beforeState, afterState, reason }
+) => {
   try {
     const actorId = req.user?._id;
     const tenantId = req.user?.tenantId;
     const branchId = req.user?.branchId || req.user?.activeBranch;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ipAddress =
+      req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'];
 
     if (!actorId) {
-      logger.warn(`⚠️ [AuditLogger] Attempted to log audit [${action}] without authenticated user.`);
+      logger.warn(
+        `⚠️ [AuditLogger] Attempted to log audit [${action}] without authenticated user.`
+      );
       return;
     }
 
@@ -42,9 +48,13 @@ export const logAuditTrail = async (req, { action, entityType, entityId, beforeS
       reason: reason || null,
     });
 
-    logger.info(`🛡️ [AuditLogger] Recorded action [${action}] on [${entityType}:${entityId}] by user ${actorId}`);
+    logger.info(
+      `🛡️ [AuditLogger] Recorded action [${action}] on [${entityType}:${entityId}] by user ${actorId}`
+    );
   } catch (err) {
-    logger.error(`❌ [AuditLogger] Failed to write AuditTrail entry: ${err.message}`);
+    logger.error(
+      `❌ [AuditLogger] Failed to write AuditTrail entry: ${err.message}`
+    );
   }
 };
 

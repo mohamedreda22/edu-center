@@ -1,25 +1,44 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
+
 import { fileTypeFromFile } from 'file-type';
+
 import { AppError } from '../errors/AppError.js';
 
-const whitelist = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'xlsx', 'docx', 'csv'];
+const whitelist = [
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'pdf',
+  'xlsx',
+  'docx',
+  'csv',
+];
 
 const secureAndRenameFile = async (file) => {
-  if (!file || !file.path) return;
+  if (!file || !file.path) {
+    return false;
+  }
 
   // 1. Get detected file type via magic bytes
-  let detected = await fileTypeFromFile(file.path);
+  const detected = await fileTypeFromFile(file.path);
   let ext = detected?.ext?.toLowerCase();
   let mime = detected?.mime?.toLowerCase();
 
   // 2. Fallback for text files (like CSV) which do not have binary magic bytes
   if (!detected) {
-    const buffer = fs.readFileSync(file.path, { encoding: 'utf8', flag: 'r' }).substring(0, 1024);
+    const buffer = fs
+      .readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
+      .substring(0, 1024);
     const isHtml = /<html|<script|<body|<svg/i.test(buffer);
     const hasNullByte = buffer.includes('\0');
-    const originalExt = path.extname(file.originalname).toLowerCase().replace('.', '');
+    const originalExt = path
+      .extname(file.originalname)
+      .toLowerCase()
+      .replace('.', '');
 
     if (!isHtml && !hasNullByte && originalExt === 'csv') {
       ext = 'csv';
@@ -48,6 +67,7 @@ const secureAndRenameFile = async (file) => {
   file.filename = newFilename;
   file.mimetype = mime;
   file.originalname = newFilename;
+  return true;
 };
 
 /**
@@ -57,7 +77,7 @@ const secureAndRenameFile = async (file) => {
  */
 export const wrapMulterMiddleware = (middleware) => {
   return (req, res, next) => {
-    middleware(req, res, async (err) => {
+    return middleware(req, res, async (err) => {
       if (err) {
         return next(err);
       }
@@ -86,9 +106,9 @@ export const wrapMulterMiddleware = (middleware) => {
           }
         }
 
-        next();
+        return next();
       } catch (validationErr) {
-        next(validationErr);
+        return next(validationErr);
       }
     });
   };

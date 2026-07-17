@@ -18,12 +18,17 @@ export const checkFeatureFlag = (flagName) => {
     // Load settings for the tenant
     const settings = await TenantSettings.findOne({ tenantId });
     if (!settings) {
-      throw new ForbiddenError('لم يتم تهيئة إعدادات وتراخيص المؤسسة التعليمية الخاصة بك');
+      throw new ForbiddenError(
+        'لم يتم تهيئة إعدادات وتراخيص المؤسسة التعليمية الخاصة بك'
+      );
     }
 
-    const isFeatureEnabled = settings.featureFlags && settings.featureFlags[flagName];
+    const isFeatureEnabled =
+      settings.featureFlags && settings.featureFlags[flagName];
     if (!isFeatureEnabled) {
-      throw new ForbiddenError('هذه الميزة غير مفعلة في اشتراك معهدكم الحالي. يرجى التواصل مع الإدارة للترقية.');
+      throw new ForbiddenError(
+        'هذه الميزة غير مفعلة في اشتراك معهدكم الحالي. يرجى التواصل مع الإدارة للترقية.'
+      );
     }
 
     next();

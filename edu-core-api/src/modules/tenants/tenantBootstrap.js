@@ -40,7 +40,10 @@ export const bootstrapTenantAndBranch = async () => {
     }
 
     // 3. Ensure Default Branch Exists
-    let branch = await Branch.findOne({ tenantId: tenant._id, name: 'الفرع الرئيسي' });
+    let branch = await Branch.findOne({
+      tenantId: tenant._id,
+      name: 'الفرع الرئيسي',
+    });
     if (!branch) {
       branch = await Branch.create({
         tenantId: tenant._id,
@@ -57,7 +60,9 @@ export const bootstrapTenantAndBranch = async () => {
       const { bootstrapRBAC } = await import('../auth/rbacBootstrap.js');
       await bootstrapRBAC(tenant._id);
     } catch (rbacErr) {
-      logger.error(`⚠️ RBAC Bootstrap failed for tenant ${tenant._id}: ${rbacErr.message}`);
+      logger.error(
+        `⚠️ RBAC Bootstrap failed for tenant ${tenant._id}: ${rbacErr.message}`
+      );
     }
 
     // 4. Backward Compatibility Auto-migration
@@ -79,7 +84,9 @@ export const bootstrapTenantAndBranch = async () => {
           { $set: { tenantId: tenant._id } }
         );
         if (tenantResult.modifiedCount > 0) {
-          logger.info(`🩹 Migrated ${tenantResult.modifiedCount} ${modelName} records to Tenant: ${tenant.slug}`);
+          logger.info(
+            `🩹 Migrated ${tenantResult.modifiedCount} ${modelName} records to Tenant: ${tenant.slug}`
+          );
         }
       }
 
@@ -90,14 +97,18 @@ export const bootstrapTenantAndBranch = async () => {
           { $set: { branchId: branch._id } }
         );
         if (branchResult.modifiedCount > 0) {
-          logger.info(`🩹 Migrated ${branchResult.modifiedCount} ${modelName} records to Branch: ${branch.name}`);
+          logger.info(
+            `🩹 Migrated ${branchResult.modifiedCount} ${modelName} records to Branch: ${branch.name}`
+          );
         }
       }
     }
 
     return { tenantId: tenant._id, branchId: branch._id };
   } catch (error) {
-    logger.error(`❌ Failed to bootstrap tenant/branch architecture: ${error.message}`);
+    logger.error(
+      `❌ Failed to bootstrap tenant/branch architecture: ${error.message}`
+    );
     throw error;
   }
 };

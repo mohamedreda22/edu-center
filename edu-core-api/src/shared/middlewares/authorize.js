@@ -47,9 +47,12 @@ export const hasPermission = (permissionKey) => {
     }
 
     // 3. Check if the permission key is in the role's permissions list
-    const isAuthorized = role.permissions && role.permissions.includes(permissionKey);
+    const isAuthorized =
+      role.permissions && role.permissions.includes(permissionKey);
     if (!isAuthorized) {
-      throw new ForbiddenError(`ليس لديك الصلاحية المطلوبة للقيام بهذا الإجراء: (${permissionKey})`);
+      throw new ForbiddenError(
+        `ليس لديك الصلاحية المطلوبة للقيام بهذا الإجراء: (${permissionKey})`
+      );
     }
 
     next();

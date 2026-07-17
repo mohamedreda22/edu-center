@@ -81,12 +81,21 @@ export const updateRole = asyncHandler(async (req, res) => {
 
   // Prevent modifying critical system keys if needed (e.g., ADMIN)
   if (role.key === 'ADMIN' && req.user.role !== 'ADMIN') {
-    throw new AppError('لا يمكن تعديل صلاحيات المدير العام من قبل مستخدم آخر', 403);
+    throw new AppError(
+      'لا يمكن تعديل صلاحيات المدير العام من قبل مستخدم آخر',
+      403
+    );
   }
 
-  if (name) role.name = name;
-  if (description) role.description = description;
-  if (permissions) role.permissions = permissions;
+  if (name) {
+    role.name = name;
+  }
+  if (description) {
+    role.description = description;
+  }
+  if (permissions) {
+    role.permissions = permissions;
+  }
 
   await role.save();
 

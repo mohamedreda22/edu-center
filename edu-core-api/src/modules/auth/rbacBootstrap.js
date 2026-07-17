@@ -16,20 +16,52 @@ export const SYSTEM_PERMISSIONS = [
   { key: 'lesson.view', name: 'عرض الجدول الدراسي', group: 'الجدول والدروس' },
   { key: 'lesson.update', name: 'تعديل موعد حصة', group: 'الجدول والدروس' },
   { key: 'lesson.delete', name: 'إلغاء حصة دراسية', group: 'الجدول والدروس' },
-  { key: 'lesson.attendance', name: 'تسجيل الحضور والغياب', group: 'الجدول والدروس' },
+  {
+    key: 'lesson.attendance',
+    name: 'تسجيل الحضور والغياب',
+    group: 'الجدول والدروس',
+  },
   { key: 'payment.create', name: 'تسجيل دفعة جديدة', group: 'المدفوعات' },
   { key: 'payment.view', name: 'عرض المدفوعات والفواتير', group: 'المدفوعات' },
-  { key: 'payment.approve', name: 'اعتماد الفواتير والخصومات', group: 'المدفوعات' },
+  {
+    key: 'payment.approve',
+    name: 'اعتماد الفواتير والخصومات',
+    group: 'المدفوعات',
+  },
   { key: 'payroll.view', name: 'عرض سجل الرواتب', group: 'الرواتب والمالية' },
-  { key: 'payroll.recalculate', name: 'إعادة احتساب الرواتب', group: 'الرواتب والمالية' },
+  {
+    key: 'payroll.recalculate',
+    name: 'إعادة احتساب الرواتب',
+    group: 'الرواتب والمالية',
+  },
   { key: 'reports.view', name: 'عرض التقارير والتحليلات', group: 'التقارير' },
-  { key: 'reports.export', name: 'تصدير التقارير (PDF/Excel)', group: 'التقارير' },
+  {
+    key: 'reports.export',
+    name: 'تصدير التقارير (PDF/Excel)',
+    group: 'التقارير',
+  },
   { key: 'settings.view', name: 'عرض الإعدادات', group: 'الإعدادات' },
-  { key: 'settings.update', name: 'تعديل إعدادات النظام والهوية', group: 'الإعدادات' },
-  { key: 'crm.view', name: 'عرض لوحة العملاء المحتملين', group: 'إدارة العملاء CRM' },
-  { key: 'crm.manage', name: 'إدارة وتحديث بيانات العملاء', group: 'إدارة العملاء CRM' },
+  {
+    key: 'settings.update',
+    name: 'تعديل إعدادات النظام والهوية',
+    group: 'الإعدادات',
+  },
+  {
+    key: 'crm.view',
+    name: 'عرض لوحة العملاء المحتملين',
+    group: 'إدارة العملاء CRM',
+  },
+  {
+    key: 'crm.manage',
+    name: 'إدارة وتحديث بيانات العملاء',
+    group: 'إدارة العملاء CRM',
+  },
   { key: 'exams.view', name: 'عرض الاختبارات والتقييمات', group: 'الامتحانات' },
-  { key: 'exams.manage', name: 'إعداد الاختبارات وبنك الأسئلة ورصد الدرجات', group: 'الامتحانات' },
+  {
+    key: 'exams.manage',
+    name: 'إعداد الاختبارات وبنك الأسئلة ورصد الدرجات',
+    group: 'الامتحانات',
+  },
   { key: 'inbox.view', name: 'عرض صندوق الرسائل', group: 'الرسائل الداخلية' },
   { key: 'inbox.send', name: 'إرسال رسائل داخلية', group: 'الرسائل الداخلية' },
 ];
@@ -44,7 +76,8 @@ export const DEFAULT_ROLES = [
   {
     key: 'TEACHER',
     name: 'المعلم',
-    description: 'يستطيع تسجيل حضور طلابه ورصد درجاتهم واستخدام بنك الأسئلة والمساعد الذكي وتلقي الرسائل',
+    description:
+      'يستطيع تسجيل حضور طلابه ورصد درجاتهم واستخدام بنك الأسئلة والمساعد الذكي وتلقي الرسائل',
     permissions: [
       'dashboard.view',
       'student.view',
@@ -59,7 +92,8 @@ export const DEFAULT_ROLES = [
   {
     key: 'RECEPTIONIST',
     name: 'موظف الاستقبال',
-    description: 'يدير شؤون الطلاب، المتابعات للعملاء المحتملين، وحجز الحصص والمدفوعات',
+    description:
+      'يدير شؤون الطلاب، المتابعات للعملاء المحتملين، وحجز الحصص والمدفوعات',
     permissions: [
       'dashboard.view',
       'student.create',
@@ -95,7 +129,8 @@ export const DEFAULT_ROLES = [
   {
     key: 'STUDENT',
     name: 'الطالب',
-    description: 'يتابع جدول حصصه، حضور الطلاب، غياباته، درجاته ومدفوعاته وتلقي الرسائل',
+    description:
+      'يتابع جدول حصصه، حضور الطلاب، غياباته، درجاته ومدفوعاته وتلقي الرسائل',
     permissions: [
       'dashboard.view',
       'lesson.view',
@@ -108,7 +143,8 @@ export const DEFAULT_ROLES = [
   {
     key: 'PARENT',
     name: 'ولي الأمر',
-    description: 'يتابع حسابات وحضور ودرجات أبنائه المرتبطين به ويدير المدفوعات',
+    description:
+      'يتابع حسابات وحضور ودرجات أبنائه المرتبطين به ويدير المدفوعات',
     permissions: [
       'dashboard.view',
       'student.view',
@@ -134,7 +170,9 @@ export const bootstrapRBAC = async (tenantId) => {
         { upsert: true }
       );
     }
-    logger.info(`🔑 System permissions validated/created (${SYSTEM_PERMISSIONS.length})`);
+    logger.info(
+      `🔑 System permissions validated/created (${SYSTEM_PERMISSIONS.length})`
+    );
 
     // 2. Ensure roles exist for the given tenant
     if (tenantId) {
@@ -145,16 +183,18 @@ export const bootstrapRBAC = async (tenantId) => {
             name: roleDef.name,
             description: roleDef.description,
             permissions: roleDef.permissions,
-            tenantId: tenantId
+            tenantId,
           },
-          { 
-            upsert: true, 
+          {
+            upsert: true,
             new: true,
-            strict: false 
+            strict: false,
           }
         );
       }
-      logger.info(`👥 Default Roles initialized/verified for tenant: ${tenantId}`);
+      logger.info(
+        `👥 Default Roles initialized/verified for tenant: ${tenantId}`
+      );
     }
   } catch (error) {
     logger.error(`❌ Failed to bootstrap RBAC: ${error.message}`);

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { multiTenantPlugin } from '../shared/mongoose/multiTenantPlugin.js';
 
 // Ensure the multi-tenant plugin is registered globally on Mongoose
@@ -30,18 +31,24 @@ export const connectDB = async (retries = 5, delay = 5000) => {
 
       // Run Tenant and Branch Bootstrap
       try {
-        const { bootstrapTenantAndBranch } = await import('../modules/tenants/tenantBootstrap.js');
+        const { bootstrapTenantAndBranch } =
+          await import('../modules/tenants/tenantBootstrap.js');
         await bootstrapTenantAndBranch();
       } catch (bootErr) {
-        logger.error(`⚠️ Tenant/Branch Bootstrap failed on startup: ${bootErr.message}`);
+        logger.error(
+          `⚠️ Tenant/Branch Bootstrap failed on startup: ${bootErr.message}`
+        );
       }
 
       // Run Versioned Database Migrations
       try {
-        const { runDatabaseMigrations } = await import('../shared/mongoose/migrationRunner.js');
+        const { runDatabaseMigrations } =
+          await import('../shared/mongoose/migrationRunner.js');
         await runDatabaseMigrations();
       } catch (migrationErr) {
-        logger.error(`⚠️ Database migrations runner failed on startup: ${migrationErr.message}`);
+        logger.error(
+          `⚠️ Database migrations runner failed on startup: ${migrationErr.message}`
+        );
       }
 
       // Simplified connection monitoring
@@ -56,7 +63,9 @@ export const connectDB = async (retries = 5, delay = 5000) => {
       // Automatic Index Verification & Creation
       try {
         const models = mongoose.modelNames();
-        logger.info(`🔄 Verifying and creating MongoDB indexes for ${models.length} models...`);
+        logger.info(
+          `🔄 Verifying and creating MongoDB indexes for ${models.length} models...`
+        );
 
         await Promise.all(
           models.map(async (modelName) => {
@@ -67,7 +76,9 @@ export const connectDB = async (retries = 5, delay = 5000) => {
 
         logger.info('✅ MongoDB index verification and creation complete.');
       } catch (indexError) {
-        logger.error(`❌ Index verification/creation warning: ${indexError.message}`);
+        logger.error(
+          `❌ Index verification/creation warning: ${indexError.message}`
+        );
       }
 
       return conn;
@@ -81,7 +92,9 @@ export const connectDB = async (retries = 5, delay = 5000) => {
         throw error;
       }
 
-      logger.info(`🔄 Retrying database connection in ${delay / 1000} seconds...`);
+      logger.info(
+        `🔄 Retrying database connection in ${delay / 1000} seconds...`
+      );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

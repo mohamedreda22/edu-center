@@ -20,10 +20,14 @@ const server = app.listen(PORT, () => {
       await connectDB();
 
       // Coordinate background/scheduled jobs to run ONLY on PM2 instance 0 to avoid duplicates
-      const isInstanceZero = typeof process.env.NODE_APP_INSTANCE === 'undefined' || process.env.NODE_APP_INSTANCE === '0';
+      const isInstanceZero =
+        typeof process.env.NODE_APP_INSTANCE === 'undefined' ||
+        process.env.NODE_APP_INSTANCE === '0';
 
       if (isInstanceZero) {
-        logger.info('⏰ PM2 Instance 0 (or single process) detected. Initializing scheduled background tasks...');
+        logger.info(
+          '⏰ PM2 Instance 0 (or single process) detected. Initializing scheduled background tasks...'
+        );
 
         // Setup simple daily check for notifications
         const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
@@ -44,7 +48,9 @@ const server = app.listen(PORT, () => {
           logger.error('Startup Payment Reminder failed:', err)
         );
       } else {
-        logger.info(`PM2 Instance ${process.env.NODE_APP_INSTANCE} detected. Bypassing scheduled background tasks to prevent duplicate triggers.`);
+        logger.info(
+          `PM2 Instance ${process.env.NODE_APP_INSTANCE} detected. Bypassing scheduled background tasks to prevent duplicate triggers.`
+        );
       }
 
       logger.info('✅ Background initializations complete');

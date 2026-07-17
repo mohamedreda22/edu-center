@@ -39,25 +39,34 @@ export const DomainEventTypes = {
 export const registerDomainEventListeners = () => {
   // 1. Lead Converted -> Auto Student Onboarding Prep
   eventBus.subscribe(DomainEventTypes.LEAD_CONVERTED, (event) => {
-    logger.info(`🔔 [Reaction] ${event.eventType}: Preparing onboarding sequence for ${event.payload.leadName}`, {
-      correlationId: event.correlationId,
-      actorId: event.actorId,
-    });
+    logger.info(
+      `🔔 [Reaction] ${event.eventType}: Preparing onboarding sequence for ${event.payload.leadName}`,
+      {
+        correlationId: event.correlationId,
+        actorId: event.actorId,
+      }
+    );
   });
 
   // 2. Payment Received -> Send invoice email asynchronously
   eventBus.subscribe(DomainEventTypes.PAYMENT_RECEIVED, (event) => {
-    logger.info(`🔔 [Reaction] ${event.eventType}: Scheduling email receipt dispatch for ${event.payload.amount} KWD`, {
-      correlationId: event.correlationId,
-      tenantId: event.tenantId,
-    });
+    logger.info(
+      `🔔 [Reaction] ${event.eventType}: Scheduling email receipt dispatch for ${event.payload.amount} KWD`,
+      {
+        correlationId: event.correlationId,
+        tenantId: event.tenantId,
+      }
+    );
   });
 
   // 3. Attendance Recorded -> Prepare WhatsApp alert
   eventBus.subscribe(DomainEventTypes.ATTENDANCE_RECORDED, (event) => {
-    logger.info(`🔔 [Reaction] ${event.eventType}: Queueing alert for guardian regarding student ID ${event.payload.studentId}`, {
-      correlationId: event.correlationId,
-    });
+    logger.info(
+      `🔔 [Reaction] ${event.eventType}: Queueing alert for guardian regarding student ID ${event.payload.studentId}`,
+      {
+        correlationId: event.correlationId,
+      }
+    );
   });
 
   logger.info('🔌 Domain Event catalog listeners fully active.');

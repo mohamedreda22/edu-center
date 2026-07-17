@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { multiTenantPlugin } from '../../shared/mongoose/multiTenantPlugin.js';
 
 const messageReadSchema = new mongoose.Schema({

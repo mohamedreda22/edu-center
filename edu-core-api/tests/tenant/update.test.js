@@ -1,9 +1,10 @@
 process.env.NODE_ENV = 'test';
 
-import { connectDB, closeDB, clearDB } from '../integration/setup.js';
-import { runWithTenant } from '../../src/shared/utils/tenantContext.js';
 import mongoose from 'mongoose';
+
 import Student from '../../src/modules/students/student.model.js';
+import { runWithTenant } from '../../src/shared/utils/tenantContext.js';
+import { connectDB, closeDB, clearDB } from '../integration/setup.js';
 
 beforeAll(async () => await connectDB());
 afterEach(async () => await clearDB());
@@ -29,10 +30,16 @@ describe('Tenant Isolation - Update Operations', () => {
 
     // Attempt to update Tenant B student under Tenant A context
     await runWithTenant(tenantA, null, async () => {
-      const result = await Student.updateOne({ _id: studentBId }, { parentName: 'Hacked Parent Name' });
+      const result = await Student.updateOne(
+        { _id: studentBId },
+        { parentName: 'Hacked Parent Name' }
+      );
       expect(result.matchedCount).toBe(0);
 
-      const findOneAndUpdateRes = await Student.findOneAndUpdate({ _id: studentBId }, { parentName: 'Hacked Parent' });
+      const findOneAndUpdateRes = await Student.findOneAndUpdate(
+        { _id: studentBId },
+        { parentName: 'Hacked Parent' }
+      );
       expect(findOneAndUpdateRes).toBeNull();
     });
 

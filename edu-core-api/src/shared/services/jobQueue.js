@@ -5,7 +5,9 @@ import logger from './logger.js';
  */
 export class JobQueueProvider {
   enqueue(jobName, taskFn, payload = {}) {
-    throw new Error('Method "enqueue" must be implemented by concrete JobQueueProvider');
+    throw new Error(
+      'Method "enqueue" must be implemented by concrete JobQueueProvider'
+    );
   }
 }
 
@@ -35,7 +37,9 @@ class InMemoryJobQueueProvider extends JobQueueProvider {
   }
 
   async _processNext() {
-    if (this.isProcessing || this.queue.length === 0) return;
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
 
     this.isProcessing = true;
     const job = this.queue.shift();
@@ -45,7 +49,9 @@ class InMemoryJobQueueProvider extends JobQueueProvider {
       await job.taskFn(job.payload);
       logger.info(`✅ [JobQueue] Completed background job: [${job.jobName}]`);
     } catch (err) {
-      logger.error(`❌ [JobQueue] Failed job: [${job.jobName}] - Error: ${err.message}`);
+      logger.error(
+        `❌ [JobQueue] Failed job: [${job.jobName}] - Error: ${err.message}`
+      );
     } finally {
       this.isProcessing = false;
       this._processNext();

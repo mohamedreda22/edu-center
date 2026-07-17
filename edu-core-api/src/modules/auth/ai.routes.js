@@ -1,8 +1,8 @@
 import express from 'express';
 
-import { processAIQuery } from '../../shared/services/aiService.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { checkFeatureFlag } from '../../shared/middlewares/featureFlags.js';
+import { processAIQuery } from '../../shared/services/aiService.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 const router = express.Router();

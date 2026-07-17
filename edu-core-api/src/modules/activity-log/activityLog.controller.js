@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import ActivityLog from './activityLog.model.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
@@ -45,7 +46,9 @@ export const getAuditTrails = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const [trails, total] = await Promise.all([
-    mongoose.model('AuditTrail').find({ tenantId })
+    mongoose
+      .model('AuditTrail')
+      .find({ tenantId })
       .populate('actorId', 'firstName lastName role')
       .sort({ createdAt: -1 })
       .skip(skip)

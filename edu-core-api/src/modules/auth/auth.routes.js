@@ -2,7 +2,9 @@ import express from 'express';
 
 import * as authController from './auth.controller.js';
 import { loginSchema } from './auth.validation.js';
+import * as rbacController from './rbac.controller.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
+import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
 
 const router = express.Router();
@@ -10,9 +12,6 @@ const router = express.Router();
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
-
-import * as rbacController from './rbac.controller.js';
-import { authorize } from '../../shared/middlewares/authorize.js';
 
 // Protected routes
 router.use(authenticate);

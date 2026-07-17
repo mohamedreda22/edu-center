@@ -28,8 +28,10 @@ export const authenticate = asyncHandler(async (req, res, next) => {
   }
 
   // 4. Check tokenVersion (safely default to 0 to prevent mismatch due to undefined/missing fields in DB or populated objects)
-  const dbTokenVersion = typeof user.tokenVersion === 'number' ? user.tokenVersion : 0;
-  const jwtTokenVersion = typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
+  const dbTokenVersion =
+    typeof user.tokenVersion === 'number' ? user.tokenVersion : 0;
+  const jwtTokenVersion =
+    typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
 
   if (dbTokenVersion !== jwtTokenVersion) {
     throw new AuthError(

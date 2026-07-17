@@ -1,6 +1,6 @@
 import * as studentService from './student.service.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 export const createStudent = asyncHandler(async (req, res) => {
   const student = await studentService.createStudent(req.body);
@@ -45,7 +45,9 @@ export const updateStudent = asyncHandler(async (req, res) => {
     action: 'STUDENT_UPDATED',
     entityType: 'Student',
     entityId: student._id,
-    beforeState: beforeStudent.toObject ? beforeStudent.toObject() : beforeStudent,
+    beforeState: beforeStudent.toObject
+      ? beforeStudent.toObject()
+      : beforeStudent,
     afterState: student.toObject ? student.toObject() : student,
   });
 
@@ -63,7 +65,9 @@ export const deleteStudent = asyncHandler(async (req, res) => {
     action: 'STUDENT_DELETED',
     entityType: 'Student',
     entityId: req.params.id,
-    beforeState: beforeStudent.toObject ? beforeStudent.toObject() : beforeStudent,
+    beforeState: beforeStudent.toObject
+      ? beforeStudent.toObject()
+      : beforeStudent,
   });
 
   res.status(204).send();

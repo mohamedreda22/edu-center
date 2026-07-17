@@ -13,8 +13,20 @@ router.use(checkFeatureFlag('crmEnabled'));
 router.get('/', hasPermission('crm.view'), leadController.getLeads);
 router.post('/', hasPermission('crm.manage'), leadController.createLead);
 router.patch('/:id', hasPermission('crm.manage'), leadController.updateLead);
-router.post('/:id/notes', hasPermission('crm.manage'), leadController.addLeadNote);
-router.post('/:id/followups', hasPermission('crm.manage'), leadController.addLeadFollowUp);
-router.patch('/:id/followups/:followUpId', hasPermission('crm.manage'), leadController.updateLeadFollowUp);
+router.post(
+  '/:id/notes',
+  hasPermission('crm.manage'),
+  leadController.addLeadNote
+);
+router.post(
+  '/:id/followups',
+  hasPermission('crm.manage'),
+  leadController.addLeadFollowUp
+);
+router.patch(
+  '/:id/followups/:followUpId',
+  hasPermission('crm.manage'),
+  leadController.updateLeadFollowUp
+);
 
 export default router;

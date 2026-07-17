@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { getTenantContext } from '../utils/tenantContext.js';
 
 const schemaExclusions = [
@@ -77,12 +78,16 @@ export const multiTenantPlugin = (schema) => {
 
   // Query helpers to easily apply tenant and branch filters
   schema.query.byTenant = function (tenantId) {
-    if (!tenantId) return this;
+    if (!tenantId) {
+      return this;
+    }
     return this.where({ tenantId });
   };
 
   schema.query.byBranch = function (branchId) {
-    if (!branchId) return this;
+    if (!branchId) {
+      return this;
+    }
     return this.where({ branchId });
   };
 
@@ -165,7 +170,9 @@ export const multiTenantPlugin = (schema) => {
     if (!options.bypassTenant) {
       const context = getTenantContext();
       if (context && context.tenantId) {
-        pipeline.unshift({ $match: { tenantId: new mongoose.Types.ObjectId(context.tenantId) } });
+        pipeline.unshift({
+          $match: { tenantId: new mongoose.Types.ObjectId(context.tenantId) },
+        });
       }
     }
 

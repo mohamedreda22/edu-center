@@ -1,5 +1,6 @@
 import express from 'express';
 
+import * as portalController from './portal.controller.js';
 import * as studentController from './student.controller.js';
 import { studentSchema, updateStudentSchema } from './student.validation.js';
 import { UserRole } from '../../shared/constants/enums.js';
@@ -7,8 +8,6 @@ import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 import { validate } from '../../shared/middlewares/validate.js';
 import * as attendanceController from '../lessons/attendance.controller.js';
-
-import * as portalController from './portal.controller.js';
 
 const router = express.Router();
 

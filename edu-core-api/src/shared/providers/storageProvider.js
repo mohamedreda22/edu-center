@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import logger from '../services/logger.js';
 
 /**
@@ -7,10 +8,14 @@ import logger from '../services/logger.js';
  */
 export class StorageProvider {
   async saveFile(file, directory) {
-    throw new Error('Method "saveFile" must be implemented by concrete StorageProvider');
+    throw new Error(
+      'Method "saveFile" must be implemented by concrete StorageProvider'
+    );
   }
   async deleteFile(filePath) {
-    throw new Error('Method "deleteFile" must be implemented by concrete StorageProvider');
+    throw new Error(
+      'Method "deleteFile" must be implemented by concrete StorageProvider'
+    );
   }
 }
 
@@ -19,7 +24,9 @@ export class StorageProvider {
  */
 class LocalDiskStorageProvider extends StorageProvider {
   async saveFile(file, directory = 'uploads') {
-    logger.info(`💾 [StorageProvider] LocalDisk saving file: ${file.originalname}`);
+    logger.info(
+      `💾 [StorageProvider] LocalDisk saving file: ${file.originalname}`
+    );
     // Simulate S3 compatible/local path saving
     return `/uploads/${file.filename}`;
   }
@@ -30,7 +37,9 @@ class LocalDiskStorageProvider extends StorageProvider {
       const uploadsRoot = path.resolve('./uploads');
       const fullPath = path.resolve(`.${filePath}`);
       if (!fullPath.startsWith(uploadsRoot)) {
-        logger.warn(`🛡️ [StorageProvider] Blocked path traversal attempt in file deletion: ${filePath}`);
+        logger.warn(
+          `🛡️ [StorageProvider] Blocked path traversal attempt in file deletion: ${filePath}`
+        );
         return false;
       }
       if (fs.existsSync(fullPath)) {

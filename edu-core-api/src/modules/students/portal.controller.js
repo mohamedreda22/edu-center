@@ -1,10 +1,10 @@
 import ParentStudent from './parentStudent.model.js';
 import Student from './student.model.js';
+import { AppError } from '../../shared/errors/AppError.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import Group from '../groups/group.model.js';
 import Lesson from '../lessons/lesson.model.js';
 import Payment from '../payments/payment.model.js';
-import { AppError } from '../../shared/errors/AppError.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 // Get Student Portal Dashboard Overview
 export const getStudentDashboard = asyncHandler(async (req, res) => {
@@ -13,7 +13,10 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
   // Find associated student profile
   const student = await Student.findOne({ userId });
   if (!student) {
-    throw new AppError('لم يتم العثور على سجل طالب مرتبط بهذا الحساب الموحد', 404);
+    throw new AppError(
+      'لم يتم العثور على سجل طالب مرتبط بهذا الحساب الموحد',
+      404
+    );
   }
 
   // 1. Fetch upcoming lessons
@@ -37,13 +40,18 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
     .populate('teacherId', 'firstName lastName');
 
   // 3. Fetch payment balance & recent invoices
-  const payments = await Payment.find({ studentId: student._id }).sort({ dueDate: -1 }).limit(10);
+  const payments = await Payment.find({ studentId: student._id })
+    .sort({ dueDate: -1 })
+    .limit(10);
   const outstandingBalance = payments
     .filter((p) => p.status === 'PENDING' || p.status === 'PARTIALLY_PAID')
     .reduce((sum, curr) => sum + curr.amount, 0);
 
   // 4. Fetch associated groups
-  const groups = await Group.find({ students: student._id }).populate('courseId', 'name subject');
+  const groups = await Group.find({ students: student._id }).populate(
+    'courseId',
+    'name subject'
+  );
 
   res.status(200).json({
     success: true,
@@ -63,7 +71,9 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
   const parentId = req.user._id;
 
   // Find linked students
-  const parentStudentLinks = await ParentStudent.find({ parentId }).populate('studentId');
+  const parentStudentLinks = await ParentStudent.find({ parentId }).populate(
+    'studentId'
+  );
   if (parentStudentLinks.length === 0) {
     return res.status(200).json({
       success: true,
@@ -76,7 +86,9 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
     });
   }
 
-  const studentIds = parentStudentLinks.map((link) => link.studentId?._id).filter(Boolean);
+  const studentIds = parentStudentLinks
+    .map((link) => link.studentId?._id)
+    .filter(Boolean);
   const children = parentStudentLinks.map((link) => ({
     student: link.studentId,
     relationship: link.relationshipType,

@@ -51,7 +51,8 @@ const rawUpload = multer({
 
 export const upload = {
   single: (fieldName) => wrapMulterMiddleware(rawUpload.single(fieldName)),
-  array: (fieldName, maxCount) => wrapMulterMiddleware(rawUpload.array(fieldName, maxCount)),
+  array: (fieldName, maxCount) =>
+    wrapMulterMiddleware(rawUpload.array(fieldName, maxCount)),
   fields: (fields) => wrapMulterMiddleware(rawUpload.fields(fields)),
   any: () => wrapMulterMiddleware(rawUpload.any()),
 };

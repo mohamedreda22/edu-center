@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+
 import * as authService from './auth.service.js';
 import RefreshToken from './refreshToken.model.js';
 import { env } from '../../config/env.js';
@@ -62,7 +63,9 @@ export const login = asyncHandler(async (req, res) => {
   });
 
   const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
-  const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+  const userObj = user.toObject
+    ? user.toObject()
+    : JSON.parse(JSON.stringify(user));
   userObj.permissions = permissionsAndRole.permissions;
   userObj.roleDetails = permissionsAndRole.roleDetails;
 
@@ -85,7 +88,9 @@ export const refresh = asyncHandler(async (req, res) => {
   const tabId = req.headers['x-refresh-tab-id'] || 'unknown';
   const source = req.headers['x-refresh-source'] || 'unknown';
 
-  logger.debug(`[Auth] Refresh requested. reqId: ${reqId}, tabId: ${tabId}, cookiePresent: ${!!refreshToken}`);
+  logger.debug(
+    `[Auth] Refresh requested. reqId: ${reqId}, tabId: ${tabId}, cookiePresent: ${!!refreshToken}`
+  );
 
   try {
     const {
@@ -98,8 +103,11 @@ export const refresh = asyncHandler(async (req, res) => {
 
     logger.debug(`[Auth] Refresh success. reqId: ${reqId}, tabId: ${tabId}`);
 
-    const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
-    const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+    const permissionsAndRole =
+      await authService.getUserPermissionsAndRole(user);
+    const userObj = user.toObject
+      ? user.toObject()
+      : JSON.parse(JSON.stringify(user));
     userObj.permissions = permissionsAndRole.permissions;
     userObj.roleDetails = permissionsAndRole.roleDetails;
 
@@ -108,7 +116,9 @@ export const refresh = asyncHandler(async (req, res) => {
       data: { user: userObj, accessToken },
     });
   } catch (err) {
-    logger.error(`[Auth] Refresh failed. reqId: ${reqId}, tabId: ${tabId}, status: ${err.statusCode || 401}, msg: ${err.message}`);
+    logger.error(
+      `[Auth] Refresh failed. reqId: ${reqId}, tabId: ${tabId}, status: ${err.statusCode || 401}, msg: ${err.message}`
+    );
     throw err;
   }
 });
@@ -122,8 +132,13 @@ export const logout = asyncHandler(async (req, res) => {
 
   if (refreshToken) {
     try {
-      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-      const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(refreshToken)
+        .digest('hex');
+      const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate(
+        'userId'
+      );
       if (tokenDoc && tokenDoc.userId) {
         req.user = tokenDoc.userId;
         await logAuditTrail(req, {
@@ -167,7 +182,9 @@ export const logoutAll = asyncHandler(async (req, res) => {
 export const me = asyncHandler(async (req, res) => {
   const user = await authService.getUserById(req.user.id);
   const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
-  const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+  const userObj = user.toObject
+    ? user.toObject()
+    : JSON.parse(JSON.stringify(user));
   userObj.permissions = permissionsAndRole.permissions;
   userObj.roleDetails = permissionsAndRole.roleDetails;
 

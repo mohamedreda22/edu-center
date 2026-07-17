@@ -14,7 +14,9 @@ export class EmailProvider {
  */
 class MockEmailProvider extends EmailProvider {
   async sendEmail({ to, subject, html }) {
-    logger.info(`📧 [EmailProvider] Dispatching email to: ${to} | Subject: "${subject}"`);
+    logger.info(
+      `📧 [EmailProvider] Dispatching email to: ${to} | Subject: "${subject}"`
+    );
     return { success: true, messageId: crypto.randomUUID() };
   }
 }
@@ -33,7 +35,9 @@ export class SMSProvider {
  */
 class MockSMSProvider extends SMSProvider {
   async sendSMS({ to, body }) {
-    logger.info(`📱 [SMSProvider] Dispatching SMS alert to: ${to} | Body: "${body}"`);
+    logger.info(
+      `📱 [SMSProvider] Dispatching SMS alert to: ${to} | Body: "${body}"`
+    );
     return { success: true, sid: crypto.randomUUID() };
   }
 }
@@ -52,7 +56,9 @@ export class WhatsAppProvider {
  */
 class MockWhatsAppProvider extends WhatsAppProvider {
   async sendWhatsApp({ to, body, templateName, variables }) {
-    logger.info(`💬 [WhatsAppProvider] Dispatching WhatsApp alert to: ${to} | Template: "${templateName || 'none'}"`);
+    logger.info(
+      `💬 [WhatsAppProvider] Dispatching WhatsApp alert to: ${to} | Template: "${templateName || 'none'}"`
+    );
     return { success: true, messageId: crypto.randomUUID() };
   }
 }

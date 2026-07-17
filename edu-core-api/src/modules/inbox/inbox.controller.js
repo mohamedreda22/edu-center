@@ -1,7 +1,7 @@
 import InboxMessage from './inboxMessage.model.js';
-import User from '../users/user.model.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import User from '../users/user.model.js';
 
 // Get messages for a conversation (direct or group)
 export const getMessages = asyncHandler(async (req, res) => {
@@ -95,7 +95,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       if (type === 'DIRECT' && recipientId) {
-        io.to(`user-${recipientId}`).to(`user-${userId}`).emit('new_message', populated);
+        io.to(`user-${recipientId}`)
+          .to(`user-${userId}`)
+          .emit('new_message', populated);
       } else if (type === 'GROUP' && groupKey) {
         io.to(`group-${groupKey}`).emit('new_message', populated);
       } else if (type === 'ANNOUNCEMENT') {
@@ -139,13 +141,22 @@ export const getConversationsList = asyncHandler(async (req, res) => {
 
   recentMessages.forEach((msg) => {
     if (msg.type === 'DIRECT') {
-      if (!msg.senderId || !msg.recipientId) return;
-      const otherUser = String(msg.senderId._id) === String(userId) ? msg.recipientId : msg.senderId;
-      if (!otherUser) return;
+      if (!msg.senderId || !msg.recipientId) {
+        return;
+      }
+      const otherUser =
+        String(msg.senderId._id) === String(userId)
+          ? msg.recipientId
+          : msg.senderId;
+      if (!otherUser) {
+        return;
+      }
 
       const otherId = String(otherUser._id);
       if (!conversationSummaryMap[otherId]) {
-        const hasBeenRead = msg.readBy.some((r) => String(r.userId) === String(userId)) || String(msg.senderId._id) === String(userId);
+        const hasBeenRead =
+          msg.readBy.some((r) => String(r.userId) === String(userId)) ||
+          String(msg.senderId._id) === String(userId);
         conversationSummaryMap[otherId] = {
           id: otherId,
           name: `${otherUser.firstName} ${otherUser.lastName}`,

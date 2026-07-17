@@ -7,7 +7,9 @@ const schemaMigrations = [
     version: 1,
     name: 'Build and verify initial dynamic RBAC permissions indexes',
     up: async (db) => {
-      logger.info('⚙️ Running Migration V1: Index and dynamic permission verification');
+      logger.info(
+        '⚙️ Running Migration V1: Index and dynamic permission verification'
+      );
       // No operations needed because Model.ensureIndexes() runs on db startup.
     },
   },
@@ -15,7 +17,9 @@ const schemaMigrations = [
     version: 2,
     name: 'SaaS multi-tenant alignment on system users',
     up: async (db) => {
-      logger.info('⚙️ Running Migration V2: Multi-tenant user mapping and alignment');
+      logger.info(
+        '⚙️ Running Migration V2: Multi-tenant user mapping and alignment'
+      );
       // Automatically handled during bootstrap, added for versioned alignment record
     },
   },
@@ -30,12 +34,16 @@ export const runDatabaseMigrations = async () => {
     logger.info('⚙️ Checking for outstanding database schema migrations...');
 
     for (const migration of schemaMigrations) {
-      const alreadyExecuted = await Migration.findOne({ version: migration.version });
+      const alreadyExecuted = await Migration.findOne({
+        version: migration.version,
+      });
       if (alreadyExecuted) {
         continue;
       }
 
-      logger.info(`🚀 Applying migration version [${migration.version}]: "${migration.name}"`);
+      logger.info(
+        `🚀 Applying migration version [${migration.version}]: "${migration.name}"`
+      );
 
       // Run transformation
       const db = (await import('mongoose')).default.connection;
@@ -47,7 +55,9 @@ export const runDatabaseMigrations = async () => {
         name: migration.name,
       });
 
-      logger.info(`✅ Successfully completed migration version [${migration.version}]`);
+      logger.info(
+        `✅ Successfully completed migration version [${migration.version}]`
+      );
     }
 
     logger.info('✅ All database schema migrations verified and up to date.');

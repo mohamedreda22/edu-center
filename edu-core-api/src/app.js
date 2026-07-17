@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { multiTenantPlugin } from './shared/mongoose/multiTenantPlugin.js';
 mongoose.plugin(multiTenantPlugin);
 
@@ -14,24 +15,20 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import mongoSanitize from 'express-mongo-sanitize';
-import hpp from 'hpp';
-import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import hpp from 'hpp';
+import jwt from 'jsonwebtoken';
 import morgan from 'morgan';
 
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
-import { correlationIdMiddleware } from './shared/middlewares/correlation.js';
-import { authenticate } from './shared/middlewares/authenticate.js';
-import { authorize } from './shared/middlewares/authorize.js';
-import { UserRole } from './shared/constants/enums.js';
 import aiRoutes from './modules/auth/ai.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
-import crmRoutes from './modules/crm/lead.routes.js';
-import inboxRoutes from './modules/inbox/inbox.routes.js';
 import courseRoutes from './modules/courses/course.routes.js';
+import crmRoutes from './modules/crm/lead.routes.js';
 import groupRoutes from './modules/groups/group.routes.js';
+import inboxRoutes from './modules/inbox/inbox.routes.js';
 import lessonRoutes from './modules/lessons/lesson.routes.js';
 import paymentRoutes from './modules/payments/payment.routes.js';
 import payrollRoutes from './modules/payroll/payroll.routes.js';
@@ -40,7 +37,11 @@ import salaryRoutes from './modules/salaries/salary.routes.js';
 import studentRoutes from './modules/students/student.routes.js';
 import teacherRoutes from './modules/teachers/teacher.routes.js';
 import userRoutes from './modules/users/user.routes.js';
+import { UserRole } from './shared/constants/enums.js';
 import { AppError } from './shared/errors/AppError.js';
+import { authenticate } from './shared/middlewares/authenticate.js';
+import { authorize } from './shared/middlewares/authorize.js';
+import { correlationIdMiddleware } from './shared/middlewares/correlation.js';
 import logger from './shared/services/logger.js';
 
 const pkg = JSON.parse(
@@ -58,7 +59,9 @@ app.use(correlationIdMiddleware);
 // 3. Security Middlewares & Dynamic CORS
 // Secure dynamic origin validation function that automatically allows any approved subdomains and tenants (*.flowship.site)
 const isOriginAllowed = (origin) => {
-  if (!origin) return true; // Allow non-browser requests (like Postman or server-to-server)
+  if (!origin) {
+    return true;
+  } // Allow non-browser requests (like Postman or server-to-server)
 
   // Regex to securely allow any subdomain of flowship.site (HTTPS only in production)
   const flowshipRegex = /^https:\/\/(?:[a-zA-Z0-9-]+\.)*flowship\.site$/;
@@ -113,21 +116,24 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Static Files for Uploads with Advanced Enterprise Security Headers
-app.use('/uploads', express.static(uploadDir, {
-  setHeaders: (res, filepath) => {
-    res.set('X-Content-Type-Options', 'nosniff');
-    res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+app.use(
+  '/uploads',
+  express.static(uploadDir, {
+    setHeaders: (res, filepath) => {
+      res.set('X-Content-Type-Options', 'nosniff');
+      res.set('Content-Security-Policy', "default-src 'none'; sandbox");
 
-    // Whitelist inline execution for safe mime-types only, force attachment for others
-    const ext = path.extname(filepath).toLowerCase();
-    const safeInlines = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf'];
-    if (safeInlines.includes(ext)) {
-      res.set('Content-Disposition', 'inline');
-    } else {
-      res.set('Content-Disposition', 'attachment');
-    }
-  }
-}));
+      // Whitelist inline execution for safe mime-types only, force attachment for others
+      const ext = path.extname(filepath).toLowerCase();
+      const safeInlines = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf'];
+      if (safeInlines.includes(ext)) {
+        res.set('Content-Disposition', 'inline');
+      } else {
+        res.set('Content-Disposition', 'attachment');
+      }
+    },
+  })
+);
 
 // 6. Rate Limiting
 const limiter = rateLimit({
@@ -221,69 +227,74 @@ app.get('/health', (req, res) => {
 });
 
 // Advanced Performance and SaaS Health Monitoring Dashboard Endpoint
-app.get('/health/advanced', authenticate, authorize(UserRole.SUPER_ADMIN), async (req, res) => {
-  const dbStates = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting',
-  };
+app.get(
+  '/health/advanced',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN),
+  async (req, res) => {
+    const dbStates = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting',
+    };
 
-  const healthKey = req.headers['x-health-key'];
-  if (!healthKey || healthKey !== env.HEALTH_KEY) {
-    return res.status(403).json({
-      success: false,
-      message: 'غير مصرح بالوصول: مفتاح التحقق مفقود أو غير صالح.',
-    });
-  }
+    const healthKey = req.headers['x-health-key'];
+    if (!healthKey || healthKey !== env.HEALTH_KEY) {
+      return res.status(403).json({
+        success: false,
+        message: 'غير مصرح بالوصول: مفتاح التحقق مفقود أو غير صالح.',
+      });
+    }
 
-  try {
-    const Tenant = mongoose.model('Tenant');
-    const User = mongoose.model('User');
-    const AuditTrail = mongoose.model('AuditTrail');
+    try {
+      const Tenant = mongoose.model('Tenant');
+      const User = mongoose.model('User');
+      const AuditTrail = mongoose.model('AuditTrail');
 
-    const [totalTenants, totalUsers, totalAuditLogs] = await Promise.all([
-      Tenant.countDocuments({}),
-      User.countDocuments({ isActive: true }),
-      AuditTrail.countDocuments({}),
-    ]);
+      const [totalTenants, totalUsers, totalAuditLogs] = await Promise.all([
+        Tenant.countDocuments({}),
+        User.countDocuments({ isActive: true }),
+        AuditTrail.countDocuments({}),
+      ]);
 
-    const memory = process.memoryUsage();
+      const memory = process.memoryUsage();
 
-    res.status(200).json({
-      success: true,
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      pid: process.pid,
-      system: {
-        nodeVersion: process.version,
-        platform: process.platform,
-        cpuUsage: process.cpuUsage(),
-        memoryUsage: {
-          heapTotalMB: (memory.heapTotal / 1024 / 1024).toFixed(2),
-          heapUsedMB: (memory.heapUsed / 1024 / 1024).toFixed(2),
-          rssMB: (memory.rss / 1024 / 1024).toFixed(2),
+      res.status(200).json({
+        success: true,
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        pid: process.pid,
+        system: {
+          nodeVersion: process.version,
+          platform: process.platform,
+          cpuUsage: process.cpuUsage(),
+          memoryUsage: {
+            heapTotalMB: (memory.heapTotal / 1024 / 1024).toFixed(2),
+            heapUsedMB: (memory.heapUsed / 1024 / 1024).toFixed(2),
+            rssMB: (memory.rss / 1024 / 1024).toFixed(2),
+          },
         },
-      },
-      database: {
-        status: dbStates[mongoose.connection.readyState] || 'unknown',
-        poolSize: mongoose.connection.getClient()?.options?.maxPoolSize || 10,
-      },
-      saasMetrics: {
-        activeTenants: totalTenants,
-        activeAccounts: totalUsers,
-        auditTrailLogsCount: totalAuditLogs,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: 'فشل تجميع المقاييس المتقدمة للنظام',
-      error: err.message,
-    });
+        database: {
+          status: dbStates[mongoose.connection.readyState] || 'unknown',
+          poolSize: mongoose.connection.getClient()?.options?.maxPoolSize || 10,
+        },
+        saasMetrics: {
+          activeTenants: totalTenants,
+          activeAccounts: totalUsers,
+          auditTrailLogsCount: totalAuditLogs,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        message: 'فشل تجميع المقاييس المتقدمة للنظام',
+        error: err.message,
+      });
+    }
   }
-});
+);
 
 // 9. API Routes Integration
 app.use('/api/v1/ai', aiRoutes);

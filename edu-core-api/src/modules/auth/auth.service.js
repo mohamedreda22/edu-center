@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs';
-import { AuthError } from '../../shared/errors/AuthError.js';
-import * as tokenService from '../../shared/services/tokenService.js';
-import logger from '../../shared/services/logger.js';
-import User from '../users/user.model.js';
-import Role from './role.model.js';
+
 import { DEFAULT_ROLES } from './rbacBootstrap.js';
+import Role from './role.model.js';
+import { AuthError } from '../../shared/errors/AuthError.js';
+import logger from '../../shared/services/logger.js';
+import * as tokenService from '../../shared/services/tokenService.js';
+import User from '../users/user.model.js';
 
 /**
  * Login user
@@ -23,7 +24,8 @@ export const login = async (email, password, ipAddress, userAgent) => {
 
   if (!user) {
     // Perform dummy bcrypt comparison to neutralize timing attacks
-    const dummyHash = '$2a$12$L7R58tV380uGjR0FzO/G9uyXgS6l1BWeW0LzBbe8Z.L78g3f8yv1i';
+    const dummyHash =
+      '$2a$12$L7R58tV380uGjR0FzO/G9uyXgS6l1BWeW0LzBbe8Z.L78g3f8yv1i';
     await bcrypt.compare(password, dummyHash);
 
     logger.warn(`🛡️ [Auth] Login failed: User not found for email ${email}`);
@@ -47,12 +49,16 @@ export const login = async (email, password, ipAddress, userAgent) => {
 
     await user.save();
 
-    logger.warn(`🛡️ [Auth] Login failed: Invalid password for email ${email} (Attempts: ${user.loginAttempts})`);
+    logger.warn(
+      `🛡️ [Auth] Login failed: Invalid password for email ${email} (Attempts: ${user.loginAttempts})`
+    );
     throw new AuthError(genericErrorMsg, 401);
   }
 
   if (user.isActive === false || user.deletedAt) {
-    logger.warn(`🛡️ [Auth] Login failed: Account is inactive/deleted for email ${email}`);
+    logger.warn(
+      `🛡️ [Auth] Login failed: Account is inactive/deleted for email ${email}`
+    );
     throw new AuthError(genericErrorMsg, 401);
   }
 
@@ -132,7 +138,10 @@ export const getUserPermissionsAndRole = async (user) => {
   if (user.roleId) {
     roleDetails = await Role.findById(user.roleId);
   } else if (user.role) {
-    roleDetails = await Role.findOne({ tenantId: user.tenantId, key: user.role });
+    roleDetails = await Role.findOne({
+      tenantId: user.tenantId,
+      key: user.role,
+    });
   }
 
   let permissions = [];
@@ -140,7 +149,7 @@ export const getUserPermissionsAndRole = async (user) => {
     const adminRole = DEFAULT_ROLES.find((r) => r.key === 'ADMIN');
     permissions = adminRole ? adminRole.permissions : [];
   } else {
-    permissions = roleDetails ? (roleDetails.permissions || []) : [];
+    permissions = roleDetails ? roleDetails.permissions || [] : [];
   }
 
   return { permissions, roleDetails };

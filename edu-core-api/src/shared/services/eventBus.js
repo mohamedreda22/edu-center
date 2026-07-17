@@ -1,11 +1,19 @@
 import { EventEmitter } from 'node:events';
+
 import logger from './logger.js';
 
 /**
  * Domain Event Envelope Contract
  */
 export class DomainEvent {
-  constructor({ eventType, tenantId, branchId, actorId, correlationId, payload }) {
+  constructor({
+    eventType,
+    tenantId,
+    branchId,
+    actorId,
+    correlationId,
+    payload,
+  }) {
     this.eventId = crypto.randomUUID();
     this.eventType = eventType;
     this.timestamp = new Date();
@@ -22,10 +30,14 @@ export class DomainEvent {
  */
 export class EventBusProvider {
   publish(event) {
-    throw new Error('Method "publish" must be implemented by concrete EventBusProvider');
+    throw new Error(
+      'Method "publish" must be implemented by concrete EventBusProvider'
+    );
   }
   subscribe(eventType, handler) {
-    throw new Error('Method "subscribe" must be implemented by concrete EventBusProvider');
+    throw new Error(
+      'Method "subscribe" must be implemented by concrete EventBusProvider'
+    );
   }
 }
 
@@ -39,10 +51,13 @@ class InMemoryEventBusProvider extends EventBusProvider {
   }
 
   publish(event) {
-    logger.info(`📢 [EventBus] Publishing event ${event.eventType} (ID: ${event.eventId})`, {
-      correlationId: event.correlationId,
-      tenantId: event.tenantId,
-    });
+    logger.info(
+      `📢 [EventBus] Publishing event ${event.eventType} (ID: ${event.eventId})`,
+      {
+        correlationId: event.correlationId,
+        tenantId: event.tenantId,
+      }
+    );
     this.emitter.emit(event.eventType, event);
   }
 

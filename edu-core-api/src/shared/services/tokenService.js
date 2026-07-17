@@ -28,7 +28,8 @@ const hashToken = (token) => {
  * @returns {string}
  */
 export const signAccessToken = (user) => {
-  const tokenVersion = typeof user?.tokenVersion === 'number' ? user.tokenVersion : 0;
+  const tokenVersion =
+    typeof user?.tokenVersion === 'number' ? user.tokenVersion : 0;
   return jwt.sign(
     {
       id: user._id,
@@ -108,7 +109,9 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
 
   const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
 
-  logger.debug(`[Auth] Token rotation requested for hash suffix: ...${tokenHash.slice(-6)}`);
+  logger.debug(
+    `[Auth] Token rotation requested for hash suffix: ...${tokenHash.slice(-6)}`
+  );
 
   if (!tokenDoc) {
     throw new AuthError('رمز تحديث غير صالح', 401, 'INVALID_REFRESH_TOKEN');
@@ -116,7 +119,9 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
 
   // Reuse detection: if token is already revoked, revoke the whole family
   if (tokenDoc.revokedAt) {
-    logger.warn(`🛡️ [Auth] Refresh Token Reuse Detected! family: ${tokenDoc.family}, hash suffix: ...${tokenHash.slice(-6)}`);
+    logger.warn(
+      `🛡️ [Auth] Refresh Token Reuse Detected! family: ${tokenDoc.family}, hash suffix: ...${tokenHash.slice(-6)}`
+    );
 
     await RefreshToken.updateMany(
       { family: tokenDoc.family },
@@ -157,7 +162,9 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
  * @param {string} rawToken
  */
 export const revokeRefreshToken = async (rawToken) => {
-  if (!rawToken) return;
+  if (!rawToken) {
+    return;
+  }
   const tokenHash = hashToken(rawToken);
   await RefreshToken.findOneAndUpdate({ tokenHash }, { revokedAt: new Date() });
 };

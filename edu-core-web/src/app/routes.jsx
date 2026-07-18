@@ -19,6 +19,9 @@ const DashboardPage = lazy(
 const StudentsListPage = lazy(
   () => import('../features/students/pages/StudentsListPage')
 );
+const StudentDetailsPage = lazy(
+  () => import('../features/students/pages/StudentDetailsPage')
+);
 const CrmPage = lazy(
   () => import('../features/students/pages/CrmPage')
 );
@@ -107,6 +110,22 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/students/:id',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Student Details...
+                    </div>
+                  }
+                >
+                  <StudentDetailsPage />
                 </Suspense>
               </ProtectedRoute>
             ),

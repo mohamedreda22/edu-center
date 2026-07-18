@@ -26,6 +26,21 @@ export const studentApi = {
     return response.data;
   },
 
+  getRegistrations: async (studentId) => {
+    const response = await apiClient.get(`/v1/students/${studentId}/registrations`);
+    return response.data;
+  },
+
+  createRegistration: async (studentId, regData) => {
+    const response = await apiClient.post(`/v1/students/${studentId}/registrations`, regData);
+    return response.data;
+  },
+
+  deleteRegistration: async (studentId, regId) => {
+    const response = await apiClient.delete(`/v1/students/${studentId}/registrations/${regId}`);
+    return response.data;
+  },
+
   getTeacherStudents: async () => {
     const response = await apiClient.get('/v1/students/my-students');
     return response.data;

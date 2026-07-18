@@ -1,6 +1,12 @@
 import * as studentService from './student.service.js';
 import StudentRegistration from './registration.model.js';
-import { getSiblingDiscountPercentage, recalculateStudentBalances } from './studentBalance.service.js';
+import Student from './student.model.js';
+import {
+  getSiblingDiscountPercentage,
+  recalculateStudentBalances,
+  calculateRegistrationWeeklyHours,
+  calculateRegistrationTeacherDue,
+} from './studentBalance.service.js';
 import { toFils } from '../../shared/utils/money.js';
 import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
@@ -9,7 +15,7 @@ import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 
 export const getStudentBalance = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const balance = await recalculateStudentBalances(id);
+  const balance = await recalculateStudentBalances(id, false);
   if (!balance) {
     throw new NotFoundError('الطالب غير موجود');
   }
@@ -21,16 +27,45 @@ export const getStudentBalance = asyncHandler(async (req, res) => {
 
 export const getRegistrations = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const registrations = await StudentRegistration.find({ studentId: id }).sort({ registrationDate: -1 });
+  const student = await Student.findById(id);
+  const registrations = await StudentRegistration.find({ studentId: id })
+    .populate('teacherId')
+    .sort({ registrationDate: -1 });
+
+  // Enrich with calculated Weekly Hours and Teacher Due dynamically
+  const enriched = await Promise.all(
+    registrations.map(async (reg) => {
+      const weeklyHours = calculateRegistrationWeeklyHours(reg);
+      const teacherDue = await calculateRegistrationTeacherDue(reg, student?.grade, student?.tenantId);
+
+      const obj = reg.toObject();
+      obj.weeklyHours = weeklyHours;
+      obj.teacherDue = teacherDue;
+      return obj;
+    })
+  );
+
   res.status(200).json({
     success: true,
-    data: registrations,
+    data: enriched,
   });
 });
 
 export const createRegistration = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { subject, purchasedHours, pricePerHour, notes } = req.body;
+  const {
+    subject,
+    purchasedHours,
+    pricePerHour,
+    teacherId,
+    day1,
+    from1,
+    to1,
+    day2,
+    from2,
+    to2,
+    notes,
+  } = req.body;
 
   const priceInFils = toFils(pricePerHour);
   const discountPct = await getSiblingDiscountPercentage(id);
@@ -49,6 +84,13 @@ export const createRegistration = asyncHandler(async (req, res) => {
         discountPercentage: discountPct,
         discountAmount,
         totalAmount,
+        teacherId: teacherId || null,
+        day1: day1 || null,
+        from1: from1 || null,
+        to1: to1 || null,
+        day2: day2 || null,
+        from2: from2 || null,
+        to2: to2 || null,
         notes,
       }
     ], { session });
@@ -69,7 +111,7 @@ export const createRegistration = asyncHandler(async (req, res) => {
   });
 
   // Trigger recalculation
-  await recalculateStudentBalances(id);
+  await recalculateStudentBalances(id, true);
 
   await logAuditTrail(req, {
     action: 'STUDENT_REGISTRATION_CREATED',
@@ -108,7 +150,7 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
   });
 
   // Trigger recalculation
-  await recalculateStudentBalances(id);
+  await recalculateStudentBalances(id, true);
 
   res.status(204).send();
 });
@@ -133,18 +175,55 @@ export const getAllStudents = asyncHandler(async (req, res) => {
   const { students, pagination } = await studentService.getAllStudents(
     req.query
   );
+
+  // Enrich each student with aggregated computed values
+  const enriched = await Promise.all(
+    students.map(async (student) => {
+      const balances = await recalculateStudentBalances(student._id);
+      const obj = student.toObject ? student.toObject() : student;
+      return {
+        ...obj,
+        weeklyHours: balances?.weeklyHours || 0,
+        totalBalance: balances?.totalPurchasedHours || 0,
+        totalConsumed: balances?.totalConsumedHours || 0,
+        remainingHours: balances?.remainingHours || 0,
+        totalDue: balances?.totalRegistrationsAmount || 0,
+        totalPaid: balances?.totalPaidPayments || 0,
+        remainingAmount: balances?.outstandingBalance || 0,
+        paymentStatus: balances?.paymentStatus || 'No Dues',
+        balanceAlert: balances?.balanceAlert || 'OK',
+      };
+    })
+  );
+
   res.status(200).json({
     success: true,
-    data: students,
+    data: enriched,
     meta: pagination,
   });
 });
 
 export const getStudent = asyncHandler(async (req, res) => {
   const student = await studentService.getStudentById(req.params.id);
+  const balances = await recalculateStudentBalances(student._id);
+
+  const obj = student.toObject ? student.toObject() : student;
+  const enriched = {
+    ...obj,
+    weeklyHours: balances?.weeklyHours || 0,
+    totalBalance: balances?.totalPurchasedHours || 0,
+    totalConsumed: balances?.totalConsumedHours || 0,
+    remainingHours: balances?.remainingHours || 0,
+    totalDue: balances?.totalRegistrationsAmount || 0,
+    totalPaid: balances?.totalPaidPayments || 0,
+    remainingAmount: balances?.outstandingBalance || 0,
+    paymentStatus: balances?.paymentStatus || 'No Dues',
+    balanceAlert: balances?.balanceAlert || 'OK',
+  };
+
   res.status(200).json({
     success: true,
-    data: student,
+    data: enriched,
   });
 });
 

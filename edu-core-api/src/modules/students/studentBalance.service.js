@@ -38,13 +38,99 @@ export const getSiblingDiscountPercentage = async (studentId) => {
 };
 
 /**
+ * Parses an HH:mm 24-hour format string into minutes since midnight.
+ * E.g., "14:30" -> 14 * 60 + 30 = 870
+ *
+ * @param {string} timeStr
+ * @returns {number}
+ */
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return 0;
+  const hours = parseInt(parts[0], 10) || 0;
+  const minutes = parseInt(parts[1], 10) || 0;
+  return hours * 60 + minutes;
+};
+
+/**
+ * Calculates weekly hours for a registration.
+ * Formula: ((To1 - From1) + (To2 - From2)) in minutes / 60
+ *
+ * @param {Object} reg
+ * @returns {number} Hours rounded to 1 decimal place
+ */
+export const calculateRegistrationWeeklyHours = (reg) => {
+  if (!reg || !reg.from1 || !reg.to1) return 0;
+
+  const duration1 = Math.max(0, parseTimeToMinutes(reg.to1) - parseTimeToMinutes(reg.from1));
+  let duration2 = 0;
+  if (reg.from2 && reg.to2) {
+    duration2 = Math.max(0, parseTimeToMinutes(reg.to2) - parseTimeToMinutes(reg.from2));
+  }
+
+  const totalMinutes = duration1 + duration2;
+  return Math.round((totalMinutes / 60) * 10) / 10;
+};
+
+/**
+ * Calculates teacher due for a single registration.
+ * Formula: Consumed Hours x Stage Hourly Rate x Teacher Percentage
+ *
+ * @param {Object} reg
+ * @param {string} studentGrade
+ * @param {string} tenantId
+ * @returns {Promise<number>} amount in fils
+ */
+export const calculateRegistrationTeacherDue = async (reg, studentGrade, tenantId) => {
+  if (!reg) return 0;
+
+  const settings = await TenantSettings.findOne({ tenantId });
+  const financialRules = settings?.financialRules || {};
+
+  // 1. Get Stage Hourly Rate from Settings (or fallback to defaults)
+  let stageRate = 7; // Default fallback for PRIMARY
+  const gradeMapping = {
+    'تأسيس': 'PRIMARY',
+    'ابتدائي': 'PRIMARY',
+    'متوسط': 'INTERMEDIATE',
+    'ثانوي': 'SECONDARY',
+    'جامعي': 'UNIVERSITY',
+    'قدرات': 'FOREIGN',
+    'تحصيلي': 'SPECIAL_NEEDS',
+  };
+
+  const stageKey = gradeMapping[studentGrade] || 'PRIMARY';
+  const hourlyRates = financialRules.hourlyRates || {
+    PRIMARY: 7,
+    INTERMEDIATE: 8,
+    SECONDARY: 10,
+    UNIVERSITY: 10,
+    FOREIGN: 15,
+    SPECIAL_NEEDS: 10,
+  };
+
+  stageRate = hourlyRates[stageKey] || stageRate;
+  const stageRateInFils = toFils(stageRate);
+
+  // 2. Get Teacher Percentage from Settings (or fallback to defaults)
+  let teacherPercentage = financialRules.teacherPercentage !== undefined ? financialRules.teacherPercentage : 75; // e.g. 75
+  const teacherPctDecimal = teacherPercentage / 100;
+
+  // 3. Compute Consumed Hours x Stage Hourly Rate x Teacher Percentage
+  const baseDue = reg.consumedHours * stageRateInFils * teacherPctDecimal;
+  return Math.round(baseDue);
+};
+
+/**
  * Recalculates student hours-based balance and outstanding financial balance.
  * Consumed hours reduce registrations in FIFO order.
  * Payments and attendance are recalculated independently.
  *
  * @param {string} studentId
+ * @param {boolean} save Whether to persist changes to database
  */
-export const recalculateStudentBalances = async (studentId) => {
+export const recalculateStudentBalances = async (studentId, save = false) => {
   const student = await Student.findById(studentId);
   if (!student) return null;
 
@@ -65,6 +151,7 @@ export const recalculateStudentBalances = async (studentId) => {
 
   // 4. Distribute consumed hours across registrations in FIFO order
   let remainingConsumed = totalConsumedHours;
+  let idx = 0;
   for (const reg of regs) {
     const allocated = Math.min(reg.purchasedHours, remainingConsumed);
     reg.consumedHours = allocated;
@@ -75,7 +162,14 @@ export const recalculateStudentBalances = async (studentId) => {
     } else {
       reg.status = 'ACTIVE';
     }
-    await reg.save();
+
+    // Set primaryRow boolean (only first registration is true)
+    reg.primaryRow = (idx === 0);
+    idx++;
+
+    if (save) {
+      await reg.save();
+    }
   }
 
   // Calculate totals
@@ -93,6 +187,50 @@ export const recalculateStudentBalances = async (studentId) => {
 
   const outstandingBalance = Math.max(0, totalRegistrationsAmount - totalPaidPayments);
 
+  // 6. Aggregate calculations as requested by the spec
+  // Weekly Hours sum across all ACTIVE registrations
+  const activeRegs = regs.filter(r => r.status === 'ACTIVE');
+  const weeklyHours = activeRegs.reduce((sum, r) => sum + calculateRegistrationWeeklyHours(r), 0);
+
+  // Sum up teacher due of every registration
+  let totalTeacherDue = 0;
+  for (const r of regs) {
+    const teacherDue = await calculateRegistrationTeacherDue(r, student.grade, student.tenantId);
+    totalTeacherDue += teacherDue;
+  }
+
+  // Payment Status:
+  // If Total Due == 0 -> No Dues
+  // Else if Remaining Amount <= 0 -> Fully Paid
+  // Else if Total Paid > 0 -> Partially Paid
+  // Else -> Not Paid
+  let paymentStatus = 'No Dues';
+  if (totalRegistrationsAmount > 0) {
+    if (outstandingBalance <= 0) {
+      paymentStatus = 'Fully Paid';
+    } else if (totalPaidPayments > 0) {
+      paymentStatus = 'Partially Paid';
+    } else {
+      paymentStatus = 'Not Paid';
+    }
+  }
+
+  // Balance Alert:
+  // Remaining Hours < 0 -> Hours Exceeded
+  // Remaining Hours <= Low Hours Threshold (Settings) -> Balance Running Low
+  // Else -> OK
+  const settings = await TenantSettings.findOne({ tenantId: student.tenantId });
+  const lowHoursThreshold = settings?.financialRules?.lowHoursThreshold !== undefined
+    ? settings.financialRules.lowHoursThreshold
+    : 2;
+
+  let balanceAlert = 'OK';
+  if (remainingHours < 0) {
+    balanceAlert = 'Hours Exceeded';
+  } else if (remainingHours <= lowHoursThreshold) {
+    balanceAlert = 'Balance Running Low';
+  }
+
   return {
     totalPurchasedHours,
     totalConsumedHours,
@@ -100,6 +238,10 @@ export const recalculateStudentBalances = async (studentId) => {
     totalRegistrationsAmount,
     totalPaidPayments,
     outstandingBalance,
+    weeklyHours,
+    paymentStatus,
+    balanceAlert,
+    teacherDue: totalTeacherDue,
   };
 };
 

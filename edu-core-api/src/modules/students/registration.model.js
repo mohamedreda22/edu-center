@@ -53,6 +53,40 @@ const studentRegistrationSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    teacherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Teacher',
+      default: null,
+      index: true,
+    },
+    day1: {
+      type: String,
+      default: null,
+    },
+    from1: {
+      type: String,
+      default: null,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    },
+    to1: {
+      type: String,
+      default: null,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    },
+    day2: {
+      type: String,
+      default: null,
+    },
+    from2: {
+      type: String,
+      default: null,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    },
+    to2: {
+      type: String,
+      default: null,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    },
     status: {
       type: String,
       enum: ['ACTIVE', 'COMPLETED', 'CANCELLED'],

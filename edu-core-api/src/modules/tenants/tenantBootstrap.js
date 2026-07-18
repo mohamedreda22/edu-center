@@ -35,6 +35,21 @@ export const bootstrapTenantAndBranch = async () => {
         currency: 'KWD',
         timezone: 'Asia/Kuwait',
         locale: 'ar',
+        financialRules: {
+          taxPercentage: 0,
+          lateFeeAmount: 5,
+          discountLimitPercentage: 50,
+          teacherPercentage: 75,
+          lowHoursThreshold: 2,
+          hourlyRates: {
+            PRIMARY: 7,
+            INTERMEDIATE: 8,
+            SECONDARY: 10,
+            UNIVERSITY: 10,
+            FOREIGN: 15,
+            SPECIAL_NEEDS: 10,
+          },
+        },
       });
       logger.info('⚙️ Default TenantSettings initialized.');
     }

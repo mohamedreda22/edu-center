@@ -1,5 +1,9 @@
 import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
+import { multiTenantPlugin } from '../../src/shared/mongoose/multiTenantPlugin.js';
+
+// Register global Mongoose plugin to prevent schema compile race conditions in Jest parallel environments
+mongoose.plugin(multiTenantPlugin);
 
 // Mock the core calculation services directly to verify the backward-compatibility facade
 jest.unstable_mockModule(

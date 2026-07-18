@@ -54,5 +54,10 @@
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
+  },
+  "jest": {
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/unit/setup.js"
+    ]
   }
 }

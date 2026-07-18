@@ -42,3 +42,36 @@ export const ledgerQuerySchema = z.object({
   studentId: z.string().optional(),
   teacherId: z.string().optional(),
 });
+
+export const createTransactionSchema = z
+  .object({
+    date: z
+      .string()
+      .optional()
+      .transform((val) => (val ? new Date(val) : new Date())),
+    type: z.enum(['STUDENT_PAYMENT', 'TEACHER_PAYMENT', 'EXPENSE']),
+    name: z.string().optional(),
+    expenseItem: z.string().optional(),
+    amount: z.number().positive('المبلغ يجب أن يكون أكبر من الصفر'),
+    paymentMethod: z.string().default('CASH'),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+    studentId: z.string().nullable().optional(),
+    teacherId: z.string().nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if ((data.type === 'STUDENT_PAYMENT' || data.type === 'TEACHER_PAYMENT') && !data.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['name'],
+        message: 'الاسم مطلوب لعمليات الدفع والصرف',
+      });
+    }
+    if (data.type === 'EXPENSE' && !data.expenseItem) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['expenseItem'],
+        message: 'بند المصروف مطلوب لتسجيل المصاريف',
+      });
+    }
+  });

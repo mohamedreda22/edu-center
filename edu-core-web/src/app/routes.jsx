@@ -43,8 +43,8 @@ const TeacherSettlementPage = lazy(
 const SchedulePage = lazy(
   () => import('../features/scheduling/pages/SchedulePage')
 );
-const PaymentsListPage = lazy(
-  () => import('../features/payments/pages/PaymentsListPage')
+const TransactionsListPage = lazy(
+  () => import('../features/payments/pages/TransactionsListPage')
 );
 const PayrollListPage = lazy(
   () => import('../features/payroll/pages/PayrollListPage')
@@ -276,7 +276,7 @@ const router = createBrowserRouter([
                     </div>
                   }
                 >
-                  <PaymentsListPage />
+                  <TransactionsListPage />
                 </Suspense>
               </ProtectedRoute>
             ),

@@ -1,7 +1,7 @@
 import express from 'express';
 
 import * as ledgerController from './ledger.controller.js';
-import { ledgerEntrySchema, ledgerQuerySchema } from './ledger.validation.js';
+import { ledgerEntrySchema, ledgerQuerySchema, createTransactionSchema } from './ledger.validation.js';
 import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
@@ -10,6 +10,19 @@ import { validate } from '../../shared/middlewares/validate.js';
 const router = express.Router();
 
 router.use(authenticate);
+
+router.post(
+  '/transactions',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(createTransactionSchema),
+  ledgerController.recordTransaction
+);
+
+router.get(
+  '/transactions',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST),
+  ledgerController.getTransactions
+);
 
 router.post(
   '/',

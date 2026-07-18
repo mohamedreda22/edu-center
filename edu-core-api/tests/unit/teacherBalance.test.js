@@ -1,5 +1,9 @@
 import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
+import { multiTenantPlugin } from '../../src/shared/mongoose/multiTenantPlugin.js';
+
+// Register global Mongoose plugin to prevent schema compile race conditions in Jest parallel environments
+mongoose.plugin(multiTenantPlugin);
 
 // Mock the models
 jest.unstable_mockModule(
@@ -37,6 +41,12 @@ jest.unstable_mockModule(
 jest.unstable_mockModule('../../src/modules/ledger/ledger.model.js', () => ({
   default: {
     find: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule('../../src/modules/teachers/teacher.model.js', () => ({
+  default: {
+    findById: jest.fn(),
   },
 }));
 

@@ -19,6 +19,9 @@ const DashboardPage = lazy(
 const StudentsListPage = lazy(
   () => import('../features/students/pages/StudentsListPage')
 );
+const StudentDetailsPage = lazy(
+  () => import('../features/students/pages/StudentDetailsPage')
+);
 const CrmPage = lazy(
   () => import('../features/students/pages/CrmPage')
 );
@@ -34,11 +37,14 @@ const TeachersListPage = lazy(
 const TeacherProfilePage = lazy(
   () => import('../features/teachers/pages/TeacherProfilePage')
 );
+const TeacherSettlementPage = lazy(
+  () => import('../features/teachers/pages/TeacherSettlementPage')
+);
 const SchedulePage = lazy(
   () => import('../features/scheduling/pages/SchedulePage')
 );
-const PaymentsListPage = lazy(
-  () => import('../features/payments/pages/PaymentsListPage')
+const TransactionsListPage = lazy(
+  () => import('../features/payments/pages/TransactionsListPage')
 );
 const PayrollListPage = lazy(
   () => import('../features/payroll/pages/PayrollListPage')
@@ -107,6 +113,38 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/teachers/settlement',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Settlements...
+                    </div>
+                  }
+                >
+                  <TeacherSettlementPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/students/:id',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Student Details...
+                    </div>
+                  }
+                >
+                  <StudentDetailsPage />
                 </Suspense>
               </ProtectedRoute>
             ),
@@ -238,7 +276,7 @@ const router = createBrowserRouter([
                     </div>
                   }
                 >
-                  <PaymentsListPage />
+                  <TransactionsListPage />
                 </Suspense>
               </ProtectedRoute>
             ),

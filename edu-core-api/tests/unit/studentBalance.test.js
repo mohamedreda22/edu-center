@@ -44,6 +44,8 @@ const {
   getSiblingDiscountPercentage,
   recalculateStudentBalances,
   calculateLessonEarnings,
+  calculateRegistrationWeeklyHours,
+  calculateRegistrationTeacherDue,
 } = await import('../../src/modules/students/studentBalance.service.js');
 
 const Student = (await import('../../src/modules/students/student.model.js')).default;
@@ -53,9 +55,34 @@ const Lesson = (await import('../../src/modules/lessons/lesson.model.js')).defau
 const Payment = (await import('../../src/modules/payments/payment.model.js')).default;
 const Teacher = (await import('../../src/modules/teachers/teacher.model.js')).default;
 
-describe('Student Balance & Financial Logic Service', () => {
+describe('Student Balance & Financial Logic Service & Weekly Hours', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('calculateRegistrationWeeklyHours', () => {
+    test('should correctly compute weekly hours from HH:mm format', () => {
+      const reg = {
+        day1: 'Sunday',
+        from1: '14:00',
+        to1: '16:30',
+        day2: 'Tuesday',
+        from2: '09:15',
+        to2: '10:45',
+      };
+      // (16:30 - 14:00) + (10:45 - 09:15) = 150 mins + 90 mins = 240 mins = 4 hours.
+      const hours = calculateRegistrationWeeklyHours(reg);
+      expect(hours).toBe(4.0);
+    });
+
+    test('should return 0 if day1 or time1 is missing', () => {
+      const reg = {
+        day1: 'Sunday',
+        from1: null,
+        to1: '16:30',
+      };
+      expect(calculateRegistrationWeeklyHours(reg)).toBe(0);
+    });
   });
 
   describe('getSiblingDiscountPercentage', () => {
@@ -116,6 +143,7 @@ describe('Student Balance & Financial Logic Service', () => {
       Student.findById.mockResolvedValue({
         _id: studentId,
         tenantId,
+        grade: 'ابتدائي',
       });
 
       const reg1 = {
@@ -125,6 +153,9 @@ describe('Student Balance & Financial Logic Service', () => {
         consumedHours: 0,
         totalAmount: 120000, // 120 KWD
         status: 'ACTIVE',
+        day1: 'Sunday',
+        from1: '14:00',
+        to1: '16:00', // 2 hours
         save: jest.fn(),
       };
       const reg2 = {
@@ -134,6 +165,9 @@ describe('Student Balance & Financial Logic Service', () => {
         consumedHours: 0,
         totalAmount: 120000, // 120 KWD
         status: 'ACTIVE',
+        day1: 'Sunday',
+        from1: '14:00',
+        to1: '16:00', // 2 hours
         save: jest.fn(),
       };
 
@@ -152,17 +186,29 @@ describe('Student Balance & Financial Logic Service', () => {
         { amount: 150000, status: 'PAID' },
       ]);
 
-      const result = await recalculateStudentBalances(studentId);
+      TenantSettings.findOne.mockResolvedValue({
+        financialRules: {
+          lowHoursThreshold: 2,
+          teacherPercentage: 75,
+          hourlyRates: {
+            PRIMARY: 7,
+          },
+        },
+      });
+
+      const result = await recalculateStudentBalances(studentId, true);
 
       // Verify FIFO allocation
       // reg1 should be completely consumed (10 hours) and marked completed
       expect(reg1.consumedHours).toBe(10);
       expect(reg1.status).toBe('COMPLETED');
+      expect(reg1.primaryRow).toBe(true);
       expect(reg1.save).toHaveBeenCalled();
 
       // reg2 should have 2 hours consumed and remain active
       expect(reg2.consumedHours).toBe(2);
       expect(reg2.status).toBe('ACTIVE');
+      expect(reg2.primaryRow).toBe(false);
       expect(reg2.save).toHaveBeenCalled();
 
       // Verify aggregates
@@ -172,6 +218,10 @@ describe('Student Balance & Financial Logic Service', () => {
       expect(result.totalRegistrationsAmount).toBe(240000);
       expect(result.totalPaidPayments).toBe(150000);
       expect(result.outstandingBalance).toBe(90000); // 240 KWD - 150 KWD = 90 KWD outstanding
+
+      // Test specific aggregate values
+      expect(result.paymentStatus).toBe('Partially Paid');
+      expect(result.balanceAlert).toBe('OK');
     });
   });
 

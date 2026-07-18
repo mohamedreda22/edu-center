@@ -1,6 +1,7 @@
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import FinancialLedger from './ledger.model.js';
-import { recordLedgerEntry, getLedgerStats } from './ledger.service.js';
+import Transaction from './transaction.model.js';
+import { recordLedgerEntry, getLedgerStats, createTransaction } from './ledger.service.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { AppError } from '../../shared/errors/AppError.js';
 
@@ -104,5 +105,71 @@ export const getLedgerSummary = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     data: stats,
+  });
+});
+
+/**
+ * @desc    Record a new complete transaction (Student payment, Teacher payment, Expense)
+ * @route   POST /api/v1/ledger/transactions
+ * @access  Private (Admin, Accountant)
+ */
+export const recordTransaction = asyncHandler(async (req, res) => {
+  const transaction = await createTransaction(req.body, req.user._id);
+
+  // Log in Audit Trail
+  await logAuditTrail(req, {
+    action: 'TRANSACTION_RECORDED',
+    entityType: 'Transaction',
+    entityId: transaction._id,
+    afterState: transaction.toObject(),
+    reason: req.body.notes || 'تسجيل معاملة مالية معقدة',
+  });
+
+  res.status(201).json({
+    success: true,
+    data: transaction,
+  });
+});
+
+/**
+ * @desc    Get paginated transactions list
+ * @route   GET /api/v1/ledger/transactions
+ * @access  Private (Admin, Accountant, Receptionist)
+ */
+export const getTransactions = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20, type, startDate, endDate } = req.query;
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  if (type) filter.type = type;
+
+  if (startDate || endDate) {
+    filter.date = {};
+    if (startDate) filter.date.$gte = new Date(startDate);
+    if (endDate) filter.date.$lte = new Date(endDate);
+  }
+
+  const [transactions, total] = await Promise.all([
+    Transaction.find(filter)
+      .populate('studentId', 'parentName studentCode grade')
+      .populate({
+        path: 'teacherId',
+        populate: { path: 'userId', select: 'firstName lastName' },
+      })
+      .sort({ date: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit)),
+    Transaction.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: transactions,
+    meta: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+    },
   });
 });

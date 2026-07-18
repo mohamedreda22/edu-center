@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen } from 'lucide-react';
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import StudentFormDialog from '../components/StudentFormDialog';
 import { studentApi } from '../services/studentApi';
@@ -64,29 +65,62 @@ const StudentsListPage = () => {
   };
 
   const columns = [
-    { header: 'الكود', accessor: 'studentCode' },
-    { header: 'ولي الأمر', accessor: 'parentName' },
-    { header: 'الهاتف', accessor: 'parentPhone' },
-    { header: 'المرحلة', accessor: 'grade' },
     {
-      header: 'الرسوم',
-      cell: (row) => formatMoney(row.monthlyFee),
+      header: 'الكود',
+      cell: (row) => (
+        <Link to={`/students/${row._id}`} className="text-primary hover:underline font-semibold">
+          {row.studentCode}
+        </Link>
+      ),
+    },
+    { header: 'ولي الأمر', accessor: 'parentName' },
+    { header: 'المرحلة', accessor: 'grade' },
+    { header: 'الساعات الأسبوعية', accessor: 'weeklyHours' },
+    { header: 'المتبقي (ساعات)', accessor: 'remainingHours' },
+    {
+      header: 'المتبقي (دينار)',
+      cell: (row) => formatMoney(row.remainingAmount || 0),
     },
     {
-      header: 'الحالة',
-      cell: (row) => <StatusBadge status={row.status} domain="student" />,
+      header: 'حالة السداد',
+      cell: (row) => (
+        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+          row.paymentStatus === 'Fully Paid' ? 'bg-green-100 text-green-800' :
+          row.paymentStatus === 'Partially Paid' ? 'bg-amber-100 text-amber-800' :
+          row.paymentStatus === 'No Dues' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {row.paymentStatus}
+        </span>
+      ),
+    },
+    {
+      header: 'تنبيه الرصيد',
+      cell: (row) => (
+        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+          row.balanceAlert === 'OK' ? 'bg-green-100 text-green-800' :
+          row.balanceAlert === 'Hours Exceeded' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+        }`}>
+          {row.balanceAlert}
+        </span>
+      ),
     },
     {
       header: 'إجراءات',
       cell: (row) => (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
-            <Edit className="h-4 w-4" />
+          <Button variant="ghost" size="icon" asChild title="عرض التفاصيل">
+            <Link to={`/students/${row._id}`}>
+              <BookOpen className="h-4 w-4 text-primary" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} title="تعديل">
+            <Edit className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDeleteId(row._id)}
+            title="حذف"
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>

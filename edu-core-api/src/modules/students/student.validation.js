@@ -52,5 +52,28 @@ export const registrationSchema = z.object({
   pricePerHour: z
     .number({ required_error: 'سعر الساعة مطلوب' })
     .min(0, 'سعر الساعة لا يمكن أن يكون سالباً'),
+  teacherId: z.string().nullable().optional(),
+  day1: z.string().nullable().optional(),
+  from1: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت البداية 1 غير صالح')
+    .nullable()
+    .optional(),
+  to1: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت النهاية 1 غير صالح')
+    .nullable()
+    .optional(),
+  day2: z.string().nullable().optional(),
+  from2: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت البداية 2 غير صالح')
+    .nullable()
+    .optional(),
+  to2: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت النهاية 2 غير صالح')
+    .nullable()
+    .optional(),
   notes: z.string().optional(),
 });

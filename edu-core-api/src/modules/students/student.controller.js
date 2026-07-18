@@ -7,6 +7,7 @@ import {
   calculateRegistrationWeeklyHours,
   calculateRegistrationTeacherDue,
 } from './studentBalance.service.js';
+import { StudentCalculationService } from './StudentCalculationService.js';
 import { toFils } from '../../shared/utils/money.js';
 import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
@@ -67,11 +68,8 @@ export const createRegistration = asyncHandler(async (req, res) => {
     notes,
   } = req.body;
 
-  const priceInFils = toFils(pricePerHour);
-  const discountPct = await getSiblingDiscountPercentage(id);
-  const baseTotal = priceInFils * purchasedHours;
-  const discountAmount = Math.round(baseTotal * (discountPct / 100));
-  const totalAmount = baseTotal - discountAmount;
+  const { priceInFils, discountPct, discountAmount, totalAmount } =
+    await StudentCalculationService.calculateRegistrationTotals(id, pricePerHour, purchasedHours);
 
   // Perform with transaction to ensure ledger and registration are atomic
   const registration = await StudentRegistration.db.transaction(async (session) => {

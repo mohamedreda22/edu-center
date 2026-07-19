@@ -1,6 +1,24 @@
-import { useQuery } from '@tanstack/react-query';
-import { User, Phone, Mail, GraduationCap, MapPin, Award, Clock, Users, Landmark, Coins } from 'lucide-react';
-import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  User,
+  Phone,
+  Mail,
+  GraduationCap,
+  MapPin,
+  Award,
+  Clock,
+  Users,
+  Landmark,
+  Coins,
+  Edit2,
+  Save,
+  X
+} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
 
 import { teacherApi } from '../services/teacherApi';
 
@@ -9,27 +27,104 @@ import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { formatMoney } from '@/shared/utils/money';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { useFormErrorHandler } from '@/shared/hooks/useFormErrorHandler';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/shared/components/ui/dialog';
+
+const editProfileSchema = z.object({
+  firstName: z.string().min(2, 'الاسم الأول يجب أن يكون حرفين على الأقل'),
+  lastName: z.string().min(2, 'الاسم الأخير يجب أن يكون حرفين على الأقل'),
+  phone: z.string().min(6, 'رقم الهاتف يجب أن يكون 6 أرقام على الأقل'),
+  whatsapp: z.string().optional(),
+  address: z.string().optional(),
+  googleMapsUrl: z.string().url('رابط جوجل ماب غير صالح').or(z.literal('')).optional(),
+  bio: z.string().optional(),
+});
 
 const TeacherProfilePage = () => {
+  const queryClient = useQueryClient();
+  const { handleFormError } = useFormErrorHandler();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-profile'],
     queryFn: teacherApi.getTeacherProfile,
   });
 
-  if (isError) {
-    return <ErrorState error={error} onRetry={refetch} />;
-  }
-
   const profile = data?.data || {};
   const user = profile.userId || {};
   const metrics = profile.metrics || {};
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(editProfileSchema),
+  });
+
+  // Sync form default values when data is loaded
+  useEffect(() => {
+    if (profile && user) {
+      reset({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+        whatsapp: profile.whatsapp || '',
+        address: profile.address || '',
+        googleMapsUrl: profile.googleMapsUrl || '',
+        bio: profile.bio || '',
+      });
+    }
+  }, [profile, user, reset]);
+
+  const updateMutation = useMutation({
+    mutationFn: teacherApi.updateTeacherProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-profile'] });
+      toast.success('تم تحديث البيانات الشخصية بنجاح / Profile updated successfully.');
+      setIsEditDialogOpen(false);
+    },
+    onError: (err) => {
+      handleFormError(err, setError);
+    },
+  });
+
+  const onSubmit = (formData) => {
+    updateMutation.mutate(formData);
+  };
+
+  if (isError) {
+    return <ErrorState error={error} onRetry={refetch} />;
+  }
+
   return (
     <div className="space-y-6 text-right" dir="rtl">
-      <PageHeader
-        title="الملف الشخصي والمالي للمعلم"
-        description="بيانات الأداء المهني والاستحقاقات المالية الحالية"
-      />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <PageHeader
+          title="الملف الشخصي والمالي للمعلم"
+          description="بيانات الأداء المهني والاستحقاقات المالية الحالية"
+        />
+        {!isLoading && (
+          <Button
+            onClick={() => setIsEditDialogOpen(true)}
+            className="h-11 rounded-xl font-bold gap-2 bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20 shrink-0"
+          >
+            <Edit2 className="h-4 w-4" />
+            تعديل الملف الشخصي / Edit Profile
+          </Button>
+        )}
+      </div>
 
       {isLoading ? (
         <Skeleton className="h-[400px] w-full rounded-xl" />
@@ -125,6 +220,14 @@ const TeacherProfilePage = () => {
                         <Phone className="h-4 w-4 text-primary/60" />
                         <span dir="ltr">{user.phone}</span>
                       </div>
+                      {profile.whatsapp && (
+                        <div className="flex items-center gap-3 text-sm col-span-full">
+                          <svg className="h-4 w-4 text-green-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.335 4.978L2 22l5.177-1.359a9.943 9.96 0 0 0 4.832 1.343h.005c5.507 0 9.991-4.478 9.992-9.986.001-2.671-2.12-5.181-4.103-7.16A9.916 9.916 0 0 0 12.012 2zm5.835 14.165c-.244.688-1.21 1.259-1.663 1.311-.453.052-.906.079-2.909-.75-2.003-.829-3.28-2.883-3.38-3.018-.1-.135-.807-1.072-.807-2.045 0-.973.51-1.45.692-1.642.182-.192.398-.24.53-.24s.265.002.38.008c.12.006.278-.045.435.334.157.38.54 1.317.587 1.41.047.094.079.204.016.33-.063.125-.094.204-.188.314-.094.11-.198.245-.282.33-.094.094-.193.197-.083.371.11.174.488.805 1.05 1.306.721.643 1.328.841 1.516.924.188.083.298.069.41-.06.11-.13.48-.56.608-.753.125-.188.25-.157.422-.094.173.063 1.1.518 1.288.613.188.094.314.141.361.22.047.079.047.456-.197 1.144z"/>
+                          </svg>
+                          <span dir="ltr">{profile.whatsapp}</span>
+                        </div>
+                      )}
                       {profile.address && (
                         <div className="flex items-center gap-3 text-sm col-span-full">
                           <MapPin className="h-4 w-4 text-primary/60" />
@@ -265,6 +368,115 @@ const TeacherProfilePage = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Profile Modal Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-xl w-[95%] rounded-2xl p-6 gap-6 overflow-hidden border border-slate-100 shadow-2xl bg-white text-right" dir="rtl">
+          <DialogHeader className="flex flex-col items-start space-y-1">
+            <DialogTitle className="text-lg font-bold text-slate-800">تعديل ملفك الشخصي</DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">تحديث تفاصيلك الشخصية ومعلومات الاتصال.</DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">الاسم الأول</label>
+                <Input
+                  id="firstName"
+                  {...register('firstName')}
+                  className={errors.firstName ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.firstName && <span className="text-red-500 text-[10px]">{errors.firstName.message}</span>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">الاسم الأخير</label>
+                <Input
+                  id="lastName"
+                  {...register('lastName')}
+                  className={errors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.lastName && <span className="text-red-500 text-[10px]">{errors.lastName.message}</span>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">رقم الهاتف</label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  className={errors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.phone && <span className="text-red-500 text-[10px]">{errors.phone.message}</span>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">رقم الواتساب (اختياري)</label>
+                <Input
+                  id="whatsapp"
+                  {...register('whatsapp')}
+                  className={errors.whatsapp ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.whatsapp && <span className="text-red-500 text-[10px]">{errors.whatsapp.message}</span>}
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-700">العنوان</label>
+                <Input
+                  id="address"
+                  {...register('address')}
+                  className={errors.address ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.address && <span className="text-red-500 text-[10px]">{errors.address.message}</span>}
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-700">رابط خريطة جوجل (جوجل ماب)</label>
+                <Input
+                  id="googleMapsUrl"
+                  placeholder="https://maps.google.com/..."
+                  {...register('googleMapsUrl')}
+                  className={errors.googleMapsUrl ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.googleMapsUrl && <span className="text-red-500 text-[10px]">{errors.googleMapsUrl.message}</span>}
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-700">نبذة شخصية</label>
+                <textarea
+                  id="bio"
+                  rows="3"
+                  className="w-full text-sm rounded-md border border-input bg-background px-3 py-2 text-slate-700 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register('bio')}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end border-t pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="h-11 rounded-xl font-bold gap-2 shrink-0 border-slate-200"
+              >
+                <X className="h-4 w-4" />
+                إلغاء / Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-11 rounded-xl font-bold gap-2 bg-primary text-white hover:bg-primary/95 shadow-lg shadow-primary/20 shrink-0"
+              >
+                {isSubmitting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                حفظ التغييرات / Save Profile
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.js\"",
     "seed": "node seed.js",
-    "create-admin": "node create-admin.js"
+    "create-admin": "node create-admin.js",
+    "migrate": "node run-migrations.js"
   },
   "dependencies": {
     "arabic-persian-reshaper": "^1.0.1",

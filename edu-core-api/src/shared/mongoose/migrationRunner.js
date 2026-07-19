@@ -23,6 +23,23 @@ const schemaMigrations = [
       // Automatically handled during bootstrap, added for versioned alignment record
     },
   },
+  {
+    version: 3,
+    name: 'Ensure all users have tokenVersion initialized to 0',
+    up: async (db) => {
+      logger.info(
+        '⚙️ Running Migration V3: Initializing tokenVersion for all users'
+      );
+      const User = db.model('User');
+      const result = await User.updateMany(
+        { tokenVersion: { $exists: false } },
+        { $set: { tokenVersion: 0 } }
+      );
+      logger.info(
+        `🩹 Initialized tokenVersion for ${result.modifiedCount} users.`
+      );
+    },
+  },
 ];
 
 /**

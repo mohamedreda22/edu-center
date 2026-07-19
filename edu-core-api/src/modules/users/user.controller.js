@@ -19,6 +19,7 @@ export const createUser = asyncHandler(async (req, res) => {
     lastName,
     phone,
     role,
+    tokenVersion: 0,
   });
 
   const userResponse = user.toObject();

@@ -56,6 +56,8 @@ async function createAdmin() {
           default: UserRole.ADMIN,
         },
         isActive: { type: Boolean, default: true },
+        tokenVersion: { type: Number, default: 0 },
+        passwordChangedAt: { type: Date },
         deletedAt: { type: Date, default: null },
       },
       { timestamps: true }
@@ -81,6 +83,7 @@ async function createAdmin() {
       phone,
       role: UserRole.ADMIN,
       isActive: true,
+      tokenVersion: 0,
     });
 
     await admin.save();

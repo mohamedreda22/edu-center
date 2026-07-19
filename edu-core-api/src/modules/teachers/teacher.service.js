@@ -119,6 +119,7 @@ export const createTeacher = async (teacherData) => {
             role: UserRole.TEACHER,
             passwordHash: teacherData.phone, // Password defaults to their phone number
             tenantId,
+            tokenVersion: 0,
           },
         ],
         { session }

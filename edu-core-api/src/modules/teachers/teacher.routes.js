@@ -23,6 +23,13 @@ router.get('/', teacherController.getAllTeachers);
 
 router.get('/profile', teacherController.getProfile);
 
+router.patch(
+  '/profile',
+  authorize(UserRole.TEACHER, UserRole.ADMIN),
+  validate(updateTeacherSchema),
+  teacherController.updateProfile
+);
+
 router.get('/:id', teacherController.getTeacher);
 
 router.patch(

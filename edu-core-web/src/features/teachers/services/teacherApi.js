@@ -41,4 +41,9 @@ export const teacherApi = {
     const response = await apiClient.get('/v1/teachers/profile');
     return response.data;
   },
+
+  updateTeacherProfile: async (profileData) => {
+    const response = await apiClient.patch('/v1/teachers/profile', profileData);
+    return response.data;
+  },
 };

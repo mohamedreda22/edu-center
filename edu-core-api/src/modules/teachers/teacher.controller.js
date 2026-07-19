@@ -9,6 +9,30 @@ export const createTeacher = asyncHandler(async (req, res) => {
   });
 });
 
+export const updateProfile = asyncHandler(async (req, res) => {
+  const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
+
+  const allowedUpdates = [
+    'firstName', 'lastName', 'phone', 'whatsapp',
+    'subjects', 'gradesTaught', 'experienceYears',
+    'address', 'googleMapsUrl', 'bio'
+  ];
+
+  const updates = {};
+  Object.keys(req.body).forEach((key) => {
+    if (allowedUpdates.includes(key)) {
+      updates[key] = req.body[key];
+    }
+  });
+
+  const updatedTeacher = await teacherService.updateTeacher(teacherDoc._id, updates);
+
+  res.status(200).json({
+    success: true,
+    data: updatedTeacher,
+  });
+});
+
 export const getProfile = asyncHandler(async (req, res) => {
   const teacher = await teacherService.getTeacherByUserId(req.user.id);
   res.status(200).json({

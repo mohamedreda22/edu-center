@@ -9,6 +9,7 @@ import PayrollRecord from '../payroll/payrollRecord.model.js';
 import StudentRegistration from '../students/registration.model.js';
 import Student from '../students/student.model.js';
 import Teacher from '../teachers/teacher.model.js';
+import { SettingsService } from '../tenants/SettingsService.js';
 
 /**
  * @desc    Get dashboard overview stats (dynamic & real-time)
@@ -95,6 +96,23 @@ export const getOverview = asyncHandler(async (req, res) => {
   const monthlyRevenue = currentMonthLedger[0]?.totalIncome || 0;
   const monthlyExpenses = currentMonthLedger[0]?.totalExpense || 0;
   const teacherCost = currentMonthLedger[0]?.teacherPayments || 0;
+
+  // Calculate Car Recovery from completed lessons of teachers using institute car this month
+  const completedLessonsThisMonth = await Lesson.find({
+    lessonDate: { $gte: startOfMonth, $lte: endOfMonth },
+    status: 'COMPLETED',
+  }).populate('teacherId');
+
+  let carRecovery = 0;
+  for (const l of completedLessonsThisMonth) {
+    if (l.teacherId?.usesInstituteCar) {
+      const rate = await SettingsService.getTransportationDeductionRate(
+        l.teacherId.tenantId
+      );
+      carRecovery += rate;
+    }
+  }
+
   const instituteProfit = monthlyRevenue - monthlyExpenses;
 
   // Previous Month for Trends
@@ -215,6 +233,7 @@ export const getOverview = asyncHandler(async (req, res) => {
     monthlyRevenue,
     monthlyExpenses,
     teacherCost,
+    carRecovery,
     instituteProfit,
     outstandingStudentBalances,
     outstandingTeacherDues,

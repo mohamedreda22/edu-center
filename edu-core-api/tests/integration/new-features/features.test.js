@@ -167,7 +167,6 @@ describe('Integration: New Features (Upload & PDF)', () => {
       // 1. Create a dummy student first
       const studentRes = await request(app)
         .post('/api/v1/students')
-        .set('Authorization', `Bearer={manualToken}`)
         .set('Authorization', `Bearer ${manualToken}`)
         .send({
           parentName: 'Al-Farabi Parent',

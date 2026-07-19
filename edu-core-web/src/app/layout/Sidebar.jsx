@@ -33,6 +33,7 @@ const menuItems = [
     icon: LayoutDashboard,
     path: '/dashboard',
     permission: 'dashboard.view',
+    category: 'الرئيسية',
   },
   {
     id: 'inbox',
@@ -40,12 +41,14 @@ const menuItems = [
     icon: Mail,
     path: '/inbox',
     permission: 'inbox.view',
+    category: 'الرئيسية',
   },
   {
     id: 'website',
     label: 'الموقع التعريفي',
     icon: Globe,
     path: '/',
+    category: 'الرئيسية',
   },
   {
     id: 'teacher-profile',
@@ -54,6 +57,7 @@ const menuItems = [
     path: '/teacher/profile',
     permission: 'lesson.attendance',
     excludeRoles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PARENT', 'STUDENT'],
+    category: 'التعليم والطلاب',
   },
   {
     id: 'teacher-students',
@@ -62,12 +66,14 @@ const menuItems = [
     path: '/teacher/students',
     permission: 'lesson.attendance',
     excludeRoles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PARENT', 'STUDENT'],
+    category: 'التعليم والطلاب',
   },
   {
     id: 'students-section',
     label: 'شؤون الطلاب',
     icon: Users,
     excludeRoles: ['TEACHER', 'PARENT', 'STUDENT'],
+    category: 'الطلاب والأكاديميا',
     children: [
       {
         id: 'students-list',
@@ -90,6 +96,7 @@ const menuItems = [
     label: 'الأكاديميا والصفوف',
     icon: BookOpen,
     excludeRoles: ['TEACHER', 'PARENT', 'STUDENT'],
+    category: 'الطلاب والأكاديميا',
     children: [
       {
         id: 'courses',
@@ -113,6 +120,7 @@ const menuItems = [
     icon: UserSquare2,
     path: '/teachers',
     permission: 'teacher.view',
+    category: 'التعليم والطلاب',
   },
   {
     id: 'scheduling',
@@ -120,12 +128,14 @@ const menuItems = [
     icon: Calendar,
     path: '/scheduling',
     permission: 'lesson.view',
+    category: 'التعليم والطلاب',
   },
   {
     id: 'financial',
     label: 'المالية والحسابات',
     icon: CreditCard,
     excludeRoles: ['TEACHER', 'PARENT', 'STUDENT'],
+    category: 'المالية والتقارير',
     children: [
       {
         id: 'payments',
@@ -149,6 +159,7 @@ const menuItems = [
     icon: BarChart3,
     path: '/reports',
     permission: 'reports.view',
+    category: 'المالية والتقارير',
   },
   {
     id: 'settings',
@@ -156,6 +167,7 @@ const menuItems = [
     icon: Settings,
     path: '/settings',
     permission: 'settings.view',
+    category: 'النظام',
   },
 ];
 
@@ -206,6 +218,18 @@ const Sidebar = () => {
     return filterRec(menuItems);
   }, [user, hasPermission]);
 
+  const categorizedItems = useMemo(() => {
+    const groups = {};
+    filteredItems.forEach((item) => {
+      const cat = item.category || 'الرئيسية';
+      if (!groups[cat]) {
+        groups[cat] = [];
+      }
+      groups[cat].push(item);
+    });
+    return groups;
+  }, [filteredItems]);
+
   const handleLinkClick = () => {
     setIsMobileOpen(false);
   };
@@ -225,7 +249,7 @@ const Sidebar = () => {
             className="w-11 h-11 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0"
           />
           {(!isTabletCollapsed || isMobileOpen) && (
-            <div className="truncate animate-fadeIn">
+            <div className="truncate animate-fadeIn text-right">
               <h1 className="text-base font-black tracking-tight leading-tight truncate">
                 معهد ألفا العالمي
               </h1>
@@ -248,114 +272,127 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation menu */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-2 select-none">
-        {filteredItems.map((item) => {
-          if (item.children) {
-            const isExpanded = expandedGroups[item.id];
-            return (
-              <div key={item.id} className="space-y-1">
-                {/* Parent Row Toggle */}
-                <button
-                  onClick={() => toggleGroup(item.id)}
-                  title={isTabletCollapsed ? item.label : undefined}
-                  className={cn(
-                    'flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full text-right',
-                    isTabletCollapsed && !isMobileOpen
-                      ? 'justify-center p-3 h-10 w-10 mx-auto'
-                      : 'gap-3 px-4 py-2.5 justify-between text-primary-foreground/70 hover:bg-white/4 hover:text-white'
-                  )}
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <item.icon
-                      className={cn(
-                        'h-4.5 w-4.5 transition-transform duration-150 shrink-0 text-primary-foreground/60'
-                      )}
-                    />
-                    {(!isTabletCollapsed || isMobileOpen) && (
-                      <span className="truncate">{item.label}</span>
-                    )}
-                  </div>
-                  {(!isTabletCollapsed || isMobileOpen) && (
-                    <ChevronDown
-                      className={cn(
-                        'h-4 w-4 transition-transform duration-200 text-primary-foreground/40',
-                        isExpanded && 'transform rotate-180 text-secondary'
-                      )}
-                    />
-                  )}
-                </button>
+      <nav className="flex-1 overflow-y-auto p-4 space-y-5 select-none text-right">
+        {Object.entries(categorizedItems).map(([categoryName, items]) => (
+          <div key={categoryName} className="space-y-1.5">
+            {/* Category Header (Hidden when collapsed) */}
+            {(!isTabletCollapsed || isMobileOpen) && (
+              <h3 className="text-[10px] font-black text-primary-foreground/40 uppercase tracking-widest px-4 mb-2 select-none text-right">
+                {categoryName}
+              </h3>
+            )}
 
-                {/* Sub items indented list */}
-                {isExpanded && (!isTabletCollapsed || isMobileOpen) && (
-                  <div className="mr-4 pr-2 border-r border-white/10 space-y-1 mt-1 animate-slideDown">
-                    {item.children.map((subItem) => (
-                      <NavLink
-                        key={subItem.path}
-                        to={subItem.path}
-                        onClick={handleLinkClick}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center rounded-lg text-xs font-medium transition-all duration-150 gap-3 px-4 py-2 hover:bg-white/4 hover:text-white',
-                            isActive ? 'text-secondary font-bold bg-white/5' : 'text-primary-foreground/60'
-                          )
-                        }
+            <div className="space-y-1">
+              {items.map((item) => {
+                if (item.children) {
+                  const isExpanded = expandedGroups[item.id];
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      {/* Parent Row Toggle */}
+                      <button
+                        onClick={() => toggleGroup(item.id)}
+                        title={isTabletCollapsed ? item.label : undefined}
+                        className={cn(
+                          'flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full text-right hover:bg-white/4 hover:text-white',
+                          isTabletCollapsed && !isMobileOpen
+                            ? 'justify-center p-3 h-10 w-10 mx-auto'
+                            : 'gap-3 px-4 py-2 justify-between text-primary-foreground/75'
+                        )}
                       >
-                        <subItem.icon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{subItem.label}</span>
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
+                        <div className="flex items-center gap-3 truncate">
+                          <item.icon
+                            className={cn(
+                              'h-4.5 w-4.5 transition-transform duration-150 shrink-0 text-primary-foreground/60'
+                            )}
+                          />
+                          {(!isTabletCollapsed || isMobileOpen) && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </div>
+                        {(!isTabletCollapsed || isMobileOpen) && (
+                          <ChevronDown
+                            className={cn(
+                              'h-4 w-4 transition-transform duration-200 text-primary-foreground/40',
+                              isExpanded && 'transform rotate-180 text-secondary'
+                            )}
+                          />
+                        )}
+                      </button>
 
-          // Render flat link (same as old sidebar link)
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={handleLinkClick}
-              title={isTabletCollapsed ? item.label : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center rounded-lg text-sm font-medium transition-all duration-150 group relative',
-                  isTabletCollapsed && !isMobileOpen
-                    ? 'justify-center p-3 h-10 w-10 mx-auto'
-                    : 'gap-3 px-4 py-2.5',
-                  isActive
-                    ? 'bg-white/8 text-white font-bold'
-                    : 'text-primary-foreground/70 hover:bg-white/4 hover:text-white'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <span className="absolute right-0 top-2 bottom-2 w-1 bg-secondary rounded-l-md" />
-                  )}
-                  <item.icon
-                    className={cn(
-                      'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
-                      isActive
-                        ? 'text-secondary scale-105'
-                        : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
+                      {/* Sub items indented list */}
+                      {isExpanded && (!isTabletCollapsed || isMobileOpen) && (
+                        <div className="mr-5 pr-2 border-r border-white/10 space-y-1 mt-1 animate-slideDown">
+                          {item.children.map((subItem) => (
+                            <NavLink
+                              key={subItem.path}
+                              to={subItem.path}
+                              onClick={handleLinkClick}
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center rounded-lg text-xs font-medium transition-all duration-150 gap-3 px-4 py-2 hover:bg-white/4 hover:text-white',
+                                  isActive ? 'text-secondary font-bold bg-white/5' : 'text-primary-foreground/60'
+                                )
+                              }
+                            >
+                              <subItem.icon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{subItem.label}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Render flat link (same as old sidebar link)
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleLinkClick}
+                    title={isTabletCollapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center rounded-lg text-sm font-medium transition-all duration-150 group relative hover:bg-white/4 hover:text-white',
+                        isTabletCollapsed && !isMobileOpen
+                          ? 'justify-center p-3 h-10 w-10 mx-auto'
+                          : 'gap-3 px-4 py-2',
+                        isActive
+                          ? 'bg-white/8 text-white font-bold'
+                          : 'text-primary-foreground/75'
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span className="absolute right-0 top-1.5 bottom-1.5 w-1 bg-secondary rounded-l-md" />
+                        )}
+                        <item.icon
+                          className={cn(
+                            'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
+                            isActive
+                              ? 'text-secondary scale-105'
+                              : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
+                          )}
+                        />
+                        {(!isTabletCollapsed || isMobileOpen) && (
+                          <span className="truncate animate-fadeIn">
+                            {item.label}
+                          </span>
+                        )}
+                      </>
                     )}
-                  />
-                  {(!isTabletCollapsed || isMobileOpen) && (
-                    <span className="truncate animate-fadeIn">
-                      {item.label}
-                    </span>
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User profile details & actions */}
-      <div className="p-4 border-t border-primary-foreground/10 space-y-2 bg-black/10">
+      <div className="p-4 border-t border-primary-foreground/10 space-y-2 bg-black/10 text-right">
         <div
           className={cn(
             'flex items-center gap-3',
@@ -404,9 +441,9 @@ const Sidebar = () => {
           title={isTabletCollapsed ? 'توسيع القائمة' : 'طي القائمة'}
         >
           {isTabletCollapsed ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
             <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
           )}
         </button>
       </div>

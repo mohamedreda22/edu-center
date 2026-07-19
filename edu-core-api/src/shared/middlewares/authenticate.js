@@ -41,6 +41,18 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // 4.5 Check passwordChangedAt to invalidate tokens issued before password was changed
+  if (user.passwordChangedAt) {
+    const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+    if (decoded.iat < changedTimestamp) {
+      throw new AuthError(
+        'انتهت صلاحية الرمز بسبب تغيير كلمة المرور مؤخراً، يرجى تسجيل الدخول مرة أخرى',
+        401,
+        'PASSWORD_CHANGED'
+      );
+    }
+  }
+
   // 5. Grant access
   req.user = user;
 

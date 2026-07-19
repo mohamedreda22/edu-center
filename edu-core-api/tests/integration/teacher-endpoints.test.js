@@ -93,4 +93,78 @@ describe('Teacher Endpoints Integration', () => {
     expect(studentsRes.body.data.length).toBe(1);
     expect(studentsRes.body.data[0].parentName).toBe('محمد جاسم');
   });
+
+  test('should successfully create teacher with auto-user creation and empty userId', async () => {
+    // 1. Create admin user to authenticate the creation request
+    const admin = await User.create({
+      email: 'admin.create@rakan.com',
+      passwordHash: 'password123',
+      firstName: 'Admin',
+      lastName: 'User',
+      phone: '88888888',
+      role: 'ADMIN',
+      isActive: true,
+      tokenVersion: 0,
+    });
+
+    // 2. Login as admin
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'admin.create@rakan.com', password: 'password123' });
+
+    const token = loginRes.body.data.accessToken;
+
+    // 3. Post to create teacher with empty userId (which frontend FormDialog sends)
+    const createRes = await request(app)
+      .post('/api/v1/teachers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        userId: '',
+        firstName: 'نبيل',
+        lastName: 'العوضي',
+        email: 'nabil@rakan.com',
+        phone: '94444444',
+        gender: 'MALE',
+        hourlyRate: '15.5', // test numeric coercion!
+        department: 'التربية الإسلامية',
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+    expect(createRes.body.data.employeeCode).toBeDefined();
+    expect(createRes.body.data.hourlyRate).toBe(15500); // 15.5 * 1000 fils
+  });
+
+  test('should fail to create teacher with invalid data format (400 Bad Request)', async () => {
+    const admin = await User.create({
+      email: 'admin.fail@rakan.com',
+      passwordHash: 'password123',
+      firstName: 'Admin',
+      lastName: 'User',
+      phone: '77777777',
+      role: 'ADMIN',
+      isActive: true,
+      tokenVersion: 0,
+    });
+
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'admin.fail@rakan.com', password: 'password123' });
+
+    const token = loginRes.body.data.accessToken;
+
+    const createRes = await request(app)
+      .post('/api/v1/teachers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        userId: '',
+        firstName: 'فشل',
+        lastName: 'التحقق',
+        email: 'not-an-email', // invalid email
+        phone: '1234',
+      });
+
+    expect(createRes.status).toBe(400);
+    expect(createRes.body.success).toBe(false);
+  });
 });

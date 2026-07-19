@@ -322,6 +322,29 @@ app.all('*', (req, res, next) => {
   next(new AppError(`المسار ${req.originalUrl} غير موجود`, 404));
 });
 
+// 11. Global Error Handler Helpers
+
+const maskBody = (body) => {
+  if (!body || typeof body !== 'object') return body;
+  const sensitiveFields = ['password', 'oldPassword', 'newPassword', 'token', 'refreshToken', 'accessToken'];
+  const masked = { ...body };
+  for (const field of sensitiveFields) {
+    if (field in masked) {
+      masked[field] = '*****';
+    }
+  }
+  return masked;
+};
+
+const getControllerFromStack = (stack) => {
+  if (!stack) return 'unknown';
+  const match = stack.match(/src\/modules\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9._-]+):(\d+)/);
+  if (match) {
+    return `${match[1]}Module -> ${match[2]}:${match[3]}`;
+  }
+  return 'unknown';
+};
+
 // 11. Global Error Handler
 
 app.use((err, req, res, _next) => {
@@ -363,8 +386,30 @@ app.use((err, req, res, _next) => {
     errors: responseErrors,
   };
 
-  // Log error
-  if (err.statusCode >= 500) {
+  // Log error with high fidelity diagnostics
+  if (err.statusCode === 401) {
+    logger.warn(`Authentication Failure [${err.code || 'UNAUTHORIZED'}]: ${err.message}`, {
+      correlationId: req.correlationId,
+      endpoint: req.originalUrl,
+      method: req.method,
+      reason: err.code || 'UNAUTHORIZED',
+      cookiePresent: !!req.cookies?.refreshToken,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      stack: err.stack,
+    });
+  } else if (err.code === 'VALIDATION_ERROR') {
+    const controllerService = getControllerFromStack(err.stack);
+    logger.warn(`Validation Failure: ${err.message}`, {
+      correlationId: req.correlationId,
+      endpoint: req.originalUrl,
+      method: req.method,
+      body: maskBody(req.body),
+      validationErrors: err.details,
+      controllerService,
+      stack: err.stack,
+    });
+  } else if (err.statusCode >= 500) {
     logger.error(`${err.message}`, {
       correlationId: req.correlationId,
       stack: err.stack,

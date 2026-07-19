@@ -40,4 +40,44 @@ describe('Auth Integration', () => {
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.data.accessToken).toBeDefined();
   });
+
+  test('should invalidate token on password change', async () => {
+    // 1. Create a user
+    const user = await User.create({
+      email: 'pwd@example.com',
+      passwordHash: 'password123',
+      firstName: 'Pwd',
+      lastName: 'User',
+      phone: '87654321',
+      role: 'ADMIN',
+      tokenVersion: 0,
+    });
+
+    // 2. Login
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'pwd@example.com', password: 'password123' });
+
+    const token = loginRes.body.data.accessToken;
+
+    // 3. Verify access succeeds
+    const meResBefore = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(meResBefore.status).toBe(200);
+
+    // 4. Change password using route
+    const changePwdRes = await request(app)
+      .post(`/api/v1/users/${user._id}/change-password`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ oldPassword: 'password123', newPassword: 'newpassword123' });
+
+    expect(changePwdRes.status).toBe(200);
+
+    // 5. Verify old token is now rejected with 401
+    const meResAfter = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(meResAfter.status).toBe(401);
+  });
 });

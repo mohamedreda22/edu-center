@@ -14,7 +14,9 @@ export const teacherSchema = z.object({
       'رقم المستخدم غير صالح (يجب أن يكون المعرف 24 حرفاً بالنظام الست عشري)'
     )
     .optional()
-    .nullable(),
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
@@ -25,7 +27,7 @@ export const teacherSchema = z.object({
   gradesTaught: z.array(z.string()).optional(),
   gender: z.nativeEnum(Gender).optional(),
   nationality: z.string().optional(),
-  experienceYears: z.number().min(0).optional(),
+  experienceYears: z.coerce.number().min(0).optional(),
   address: z.string().optional(),
   googleMapsUrl: z.string().url().optional().or(z.literal('')),
   availability: z
@@ -45,10 +47,10 @@ export const teacherSchema = z.object({
   ownsCar: z.boolean().optional(),
   transportationAvailable: z.boolean().optional(),
   usesInstituteCar: z.boolean().optional(),
-  hourlyRate: z.number().min(0).optional(),
+  hourlyRate: z.coerce.number().min(0).optional(),
   commissionModel: z.nativeEnum(CommissionModel).optional(),
-  teacherPercentage: z.number().min(0).max(1).optional(),
-  institutePercentage: z.number().min(0).max(1).optional(),
+  teacherPercentage: z.coerce.number().min(0).max(1).optional(),
+  institutePercentage: z.coerce.number().min(0).max(1).optional(),
   department: z.string().optional(),
   bio: z.string().optional(),
   isActive: z.boolean().optional(),

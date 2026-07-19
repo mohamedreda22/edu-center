@@ -75,6 +75,9 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    passwordChangedAt: {
+      type: Date,
+    },
     loginAttempts: {
       type: Number,
       default: 0,
@@ -100,20 +103,20 @@ userSchema.index({ tenantId: 1 });
 userSchema.index({ tenantId: 1, email: 1 });
 userSchema.index({ tenantId: 1, branchId: 1 });
 
-// Pre-save middleware to hash password
+// Pre-save middleware to hash password and maintain passwordChangedAt
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('passwordHash')) {
-    next();
-    return;
+  if (this.isModified('passwordHash')) {
+    if (!this.isNew) {
+      this.passwordChangedAt = new Date();
+    }
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
+    } catch (error) {
+      return next(error);
+    }
   }
-
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  next();
 });
 
 // Method to compare password

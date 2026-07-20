@@ -11,6 +11,11 @@ export const payrollApi = {
     return response.data;
   },
 
+  getApprovalDetails: async (id) => {
+    const response = await apiClient.get(`/v1/payroll/${id}/approval`);
+    return response.data;
+  },
+
   markPaid: async (id) => {
     const response = await apiClient.patch(`/v1/payroll/${id}/paid`);
     return response.data;
@@ -23,6 +28,13 @@ export const payrollApi = {
 
   approvePayroll: async (id) => {
     const response = await apiClient.patch(`/v1/payroll/${id}/approve`);
+    return response.data;
+  },
+
+  rejectPayroll: async ({ id, rejectReason }) => {
+    const response = await apiClient.patch(`/v1/payroll/${id}/reject`, {
+      rejectReason,
+    });
     return response.data;
   },
 };

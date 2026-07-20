@@ -95,6 +95,12 @@ const financialLedgerSchema = new mongoose.Schema(
 // High-performance financial queries index
 financialLedgerSchema.index({ transactionDate: -1, type: 1 });
 
+// High-performance compound indexes for multi-tenant and branch reporting
+financialLedgerSchema.index({ tenantId: 1, transactionDate: -1, direction: 1 });
+financialLedgerSchema.index({ tenantId: 1, type: 1, direction: 1 });
+financialLedgerSchema.index({ tenantId: 1, studentId: 1, type: 1 });
+financialLedgerSchema.index({ tenantId: 1, teacherId: 1, type: 1 });
+
 const FinancialLedger = mongoose.model(
   'FinancialLedger',
   financialLedgerSchema

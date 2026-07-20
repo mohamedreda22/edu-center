@@ -27,17 +27,31 @@ export const studentApi = {
   },
 
   getRegistrations: async (studentId) => {
-    const response = await apiClient.get(`/v1/students/${studentId}/registrations`);
+    const response = await apiClient.get(
+      `/v1/students/${studentId}/registrations`
+    );
+    return response.data;
+  },
+
+  getHourLedger: async (studentId) => {
+    const response = await apiClient.get(
+      `/v1/students/${studentId}/hour-ledger`
+    );
     return response.data;
   },
 
   createRegistration: async (studentId, regData) => {
-    const response = await apiClient.post(`/v1/students/${studentId}/registrations`, regData);
+    const response = await apiClient.post(
+      `/v1/students/${studentId}/registrations`,
+      regData
+    );
     return response.data;
   },
 
   deleteRegistration: async (studentId, regId) => {
-    const response = await apiClient.delete(`/v1/students/${studentId}/registrations/${regId}`);
+    const response = await apiClient.delete(
+      `/v1/students/${studentId}/registrations/${regId}`
+    );
     return response.data;
   },
 
@@ -47,12 +61,16 @@ export const studentApi = {
   },
 
   getStudentDashboard: async () => {
-    const response = await apiClient.get('/v1/students/portal/student-dashboard');
+    const response = await apiClient.get(
+      '/v1/students/portal/student-dashboard'
+    );
     return response.data;
   },
 
   getParentDashboard: async () => {
-    const response = await apiClient.get('/v1/students/portal/parent-dashboard');
+    const response = await apiClient.get(
+      '/v1/students/portal/parent-dashboard'
+    );
     return response.data;
   },
 };

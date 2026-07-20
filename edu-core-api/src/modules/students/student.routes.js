@@ -45,6 +45,8 @@ router.get('/:id/balance', studentController.getStudentBalance);
 
 router.get('/:id/registrations', studentController.getRegistrations);
 
+router.get('/:id/hour-ledger', studentController.getStudentHourLedger);
+
 router.post(
   '/:id/registrations',
   authorize(UserRole.ADMIN, UserRole.RECEPTIONIST),

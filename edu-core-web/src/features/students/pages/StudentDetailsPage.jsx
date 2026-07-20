@@ -1,17 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, BookOpen, Clock, CreditCard, DollarSign, Calendar } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  BookOpen,
+  Clock,
+  CreditCard,
+  Calendar,
+} from 'lucide-react';
 import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 
-import { studentApi } from '../services/studentApi';
 import { teacherApi } from '../../teachers/services/teacherApi';
+import HourLedgerTimeline from '../components/HourLedgerTimeline';
 import RegistrationFormDialog from '../components/RegistrationFormDialog';
+import { studentApi } from '../services/studentApi';
 
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
-import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/card';
 import { formatMoney } from '@/shared/utils/money';
 
 const StudentDetailsPage = () => {
@@ -30,6 +43,11 @@ const StudentDetailsPage = () => {
     queryFn: () => studentApi.getRegistrations(id),
   });
 
+  const { data: ledgerRes, isLoading: loadingLedger } = useQuery({
+    queryKey: ['student-hour-ledger', id],
+    queryFn: () => studentApi.getHourLedger(id),
+  });
+
   const { data: teachersRes } = useQuery({
     queryKey: ['teachers'],
     queryFn: () => teacherApi.getAllTeachers(),
@@ -40,6 +58,7 @@ const StudentDetailsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['student', id]);
       queryClient.invalidateQueries(['student-registrations', id]);
+      queryClient.invalidateQueries(['student-hour-ledger', id]);
       setRegOpen(false);
     },
   });
@@ -49,22 +68,27 @@ const StudentDetailsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['student', id]);
       queryClient.invalidateQueries(['student-registrations', id]);
+      queryClient.invalidateQueries(['student-hour-ledger', id]);
       setDeleteRegId(null);
     },
   });
 
-  if (loadingStudent || loadingRegs) {
+  if (loadingStudent || loadingRegs || loadingLedger) {
     return <div className="text-center py-10">جاري التحميل...</div>;
   }
 
   const student = studentRes?.data;
   const registrations = regsRes?.data || [];
+  const ledgerHistory = ledgerRes?.data || [];
   const teachers = teachersRes?.data || [];
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
       <div className="flex items-center justify-between">
-        <PageHeader title={student?.parentName || 'تفاصيل الطالب'} description={`كود الطالب: ${student?.studentCode}`}>
+        <PageHeader
+          title={student?.parentName || 'تفاصيل الطالب'}
+          description={`كود الطالب: ${student?.studentCode}`}
+        >
           <div className="flex gap-2">
             <Button asChild variant="outline">
               <Link to="/students">
@@ -90,8 +114,12 @@ const StudentDetailsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{student?.totalBalance || 0} ساعة</div>
-            <p className="text-xs text-muted-foreground mt-1">المجموع التراكمي لجميع المواد</p>
+            <div className="text-2xl font-bold">
+              {student?.totalBalance || 0} ساعة
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              المجموع التراكمي لجميع المواد
+            </p>
           </CardContent>
         </Card>
 
@@ -103,8 +131,12 @@ const StudentDetailsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{student?.totalConsumed || 0} ساعة</div>
-            <p className="text-xs text-muted-foreground mt-1">المستهلكة بالحصص المكتملة</p>
+            <div className="text-2xl font-bold">
+              {student?.totalConsumed || 0} ساعة
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              المستهلكة بالحصص المكتملة
+            </p>
           </CardContent>
         </Card>
 
@@ -116,10 +148,18 @@ const StudentDetailsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{student?.remainingHours || 0} ساعة</div>
+            <div className="text-2xl font-bold">
+              {student?.remainingHours || 0} ساعة
+            </div>
             <div className="mt-1">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${student?.balanceAlert === 'OK' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                {student?.balanceAlert === 'OK' ? 'رصيد ممتاز' : student?.balanceAlert === 'Hours Exceeded' ? 'تجاوز الساعات' : 'رصيد منخفض'}
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${student?.balanceAlert === 'OK' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+              >
+                {student?.balanceAlert === 'OK'
+                  ? 'رصيد ممتاز'
+                  : student?.balanceAlert === 'Hours Exceeded'
+                    ? 'تجاوز الساعات'
+                    : 'رصيد منخفض'}
               </span>
             </div>
           </CardContent>
@@ -133,7 +173,9 @@ const StudentDetailsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-red-600">المتبقي: {formatMoney(student?.remainingAmount || 0)}</div>
+            <div className="text-xl font-bold text-red-600">
+              المتبقي: {formatMoney(student?.remainingAmount || 0)}
+            </div>
             <div className="text-xs text-muted-foreground mt-1 flex justify-between">
               <span>المدفوع: {formatMoney(student?.totalPaid || 0)}</span>
               <span>الإجمالي: {formatMoney(student?.totalDue || 0)}</span>
@@ -155,12 +197,16 @@ const StudentDetailsPage = () => {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">رقم الهاتف:</span>
-              <span className="font-semibold" dir="ltr">{student?.parentPhone}</span>
+              <span className="font-semibold" dir="ltr">
+                {student?.parentPhone}
+              </span>
             </div>
             {student?.whatsapp && (
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">واتساب:</span>
-                <span className="font-semibold" dir="ltr">{student?.whatsapp}</span>
+                <span className="font-semibold" dir="ltr">
+                  {student?.whatsapp}
+                </span>
               </div>
             )}
             <div className="flex justify-between border-b pb-2">
@@ -169,7 +215,9 @@ const StudentDetailsPage = () => {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">الرسوم الشهرية:</span>
-              <span className="font-semibold">{formatMoney(student?.monthlyFee || 0)}</span>
+              <span className="font-semibold">
+                {formatMoney(student?.monthlyFee || 0)}
+              </span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">حالة السداد:</span>
@@ -202,27 +250,50 @@ const StudentDetailsPage = () => {
           </CardHeader>
           <CardContent>
             {registrations.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">لا توجد مواد مسجلة حالياً لهذا الطالب.</div>
+              <div className="text-center py-10 text-muted-foreground">
+                لا توجد مواد مسجلة حالياً لهذا الطالب.
+              </div>
             ) : (
               <div className="space-y-4">
                 {registrations.map((reg) => (
-                  <div key={reg._id} className={`p-4 border rounded-lg ${reg.primaryRow ? 'border-primary bg-primary/5' : ''}`}>
+                  <div
+                    key={reg._id}
+                    className={`p-4 border rounded-lg ${reg.primaryRow ? 'border-primary bg-primary/5' : ''}`}
+                  >
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h4 className="font-bold text-lg text-primary flex items-center gap-2">
                           {reg.subject}
-                          {reg.registrationId && <span className="text-sm font-normal text-muted-foreground">({reg.registrationId})</span>}
-                          {reg.primaryRow && <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">التسجيل الرئيسي</span>}
+                          {reg.registrationId && (
+                            <span className="text-sm font-normal text-muted-foreground">
+                              ({reg.registrationId})
+                            </span>
+                          )}
+                          {reg.primaryRow && (
+                            <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                              التسجيل الرئيسي
+                            </span>
+                          )}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          المعلم: {reg.teacherId ? `${reg.teacherId.userId?.firstName || ''} ${reg.teacherId.userId?.lastName || ''}` : 'غير محدد'}
+                          المعلم:{' '}
+                          {reg.teacherId
+                            ? `${reg.teacherId.userId?.firstName || ''} ${reg.teacherId.userId?.lastName || ''}`
+                            : 'غير محدد'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${reg.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${reg.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}
+                        >
                           {reg.status}
                         </span>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteRegId(reg._id)} className="text-red-500 hover:text-red-700">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteRegId(reg._id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -230,26 +301,44 @@ const StudentDetailsPage = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4 text-xs border-t pt-2">
                       <div>
-                        <span className="text-muted-foreground block">الساعات المشتراة / المستهلكة:</span>
-                        <span className="font-semibold">{reg.purchasedHours} / {reg.consumedHours} ساعة</span>
+                        <span className="text-muted-foreground block">
+                          الساعات المشتراة / المستهلكة:
+                        </span>
+                        <span className="font-semibold">
+                          {reg.purchasedHours} / {reg.consumedHours} ساعة
+                        </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block">السعر الإجمالي:</span>
-                        <span className="font-semibold">{formatMoney(reg.totalAmount)}</span>
+                        <span className="text-muted-foreground block">
+                          السعر الإجمالي:
+                        </span>
+                        <span className="font-semibold">
+                          {formatMoney(reg.totalAmount)}
+                        </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block">الساعات الأسبوعية:</span>
-                        <span className="font-semibold">{reg.weeklyHours || 0} ساعة</span>
+                        <span className="text-muted-foreground block">
+                          الساعات الأسبوعية:
+                        </span>
+                        <span className="font-semibold">
+                          {reg.weeklyHours || 0} ساعة
+                        </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block">مستحقات المعلم:</span>
-                        <span className="font-semibold">{formatMoney(reg.teacherDue || 0)}</span>
+                        <span className="text-muted-foreground block">
+                          مستحقات المعلم:
+                        </span>
+                        <span className="font-semibold">
+                          {formatMoney(reg.teacherDue || 0)}
+                        </span>
                       </div>
                     </div>
 
                     {(reg.day1 || reg.day2) && (
                       <div className="mt-2 text-xs bg-muted p-2 rounded-md">
-                        <span className="font-semibold text-muted-foreground">الجدول الأسبوعي:</span>
+                        <span className="font-semibold text-muted-foreground">
+                          الجدول الأسبوعي:
+                        </span>
                         <div className="flex gap-4 mt-1 flex-wrap">
                           {reg.day1 && (
                             <span className="flex items-center gap-1">
@@ -272,6 +361,11 @@ const StudentDetailsPage = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* High-Fidelity Student Hour Ledger Timeline */}
+      <div className="mt-6">
+        <HourLedgerTimeline history={ledgerHistory} />
       </div>
 
       <RegistrationFormDialog

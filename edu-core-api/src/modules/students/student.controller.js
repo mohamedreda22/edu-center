@@ -17,6 +17,8 @@ import {
   recordLedgerEntry,
   removeLedgerEntriesByReference,
 } from '../ledger/ledger.service.js';
+import HourLedgerService from './hourLedger.service.js';
+import HourTransaction from './hourTransaction.model.js';
 
 export const getStudentBalance = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -130,6 +132,19 @@ export const createRegistration = asyncHandler(async (req, res) => {
       session
     );
 
+    // Record hour transaction in ledger
+    await HourLedgerService.recordHourEntry(
+      {
+        studentId: id,
+        registrationId: reg._id,
+        amount: purchasedHours,
+        type: 'PURCHASE',
+        description: `شراء باقة ساعات - مادة ${subject}`,
+        performedBy: req.user._id,
+      },
+      session
+    );
+
     return reg;
   });
 
@@ -163,6 +178,9 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
 
     // Remove ledger entry
     await removeLedgerEntriesByReference(regId, 'PACKAGE_PURCHASE', session);
+
+    // Remove matching hour transaction entries
+    await HourTransaction.deleteMany({ registrationId: regId }, { session });
 
     await logAuditTrail(req, {
       action: 'STUDENT_REGISTRATION_DELETED',
@@ -289,4 +307,13 @@ export const deleteStudent = asyncHandler(async (req, res) => {
 export const getTeacherStudents = asyncHandler(async (req, res) => {
   const students = await studentService.getStudentsByTeacherId(req.user.id);
   res.status(200).json({ success: true, data: students });
+});
+
+export const getStudentHourLedger = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const history = await HourLedgerService.getStudentHistory(id);
+  res.status(200).json({
+    success: true,
+    data: history,
+  });
 });

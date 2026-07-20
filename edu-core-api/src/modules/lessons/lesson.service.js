@@ -11,6 +11,9 @@ import {
   recalculateStudentBalances,
 } from '../students/studentBalance.service.js';
 import * as teacherRepository from '../teachers/teacher.repository.js';
+import HourLedgerService from '../students/hourLedger.service.js';
+import HourTransaction from '../students/hourTransaction.model.js';
+import StudentRegistration from '../students/registration.model.js';
 
 /**
  * Check for scheduling conflicts
@@ -202,6 +205,53 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
     lesson.instituteRevenue = earningsResult.instituteRevenue;
 
     await lesson.save({ session });
+
+    // Record or clear Hour Ledger transaction based on the new status
+    if (status === 'COMPLETED') {
+      let targetReg = await StudentRegistration.findOne({
+        studentId: lesson.studentId,
+        status: 'ACTIVE',
+      }).sort({ registrationDate: 1 }).session(session);
+
+      if (!targetReg) {
+        targetReg = await StudentRegistration.findOne({
+          studentId: lesson.studentId,
+        }).sort({ registrationDate: -1 }).session(session);
+      }
+
+      if (targetReg) {
+        const existingTx = await HourTransaction.findOne({
+          lessonId: lesson._id,
+        }).session(session);
+
+        if (!existingTx) {
+          await HourLedgerService.recordHourEntry(
+            {
+              studentId: lesson.studentId,
+              registrationId: targetReg._id,
+              lessonId: lesson._id,
+              amount: -lesson.durationHours,
+              type: 'CONSUMED',
+              description: `حضور حصة مادة ${lesson.subject}`,
+              performedBy: userId,
+              transactionDate: lesson.lessonDate,
+            },
+            session
+          );
+        }
+      }
+    } else {
+      // If transitioned away from COMPLETED, remove the CONSUMED ledger transaction if it exists
+      const existingTx = await HourTransaction.findOne({
+        lessonId: lesson._id,
+      }).session(session);
+
+      if (existingTx) {
+        const regId = existingTx.registrationId;
+        await HourTransaction.deleteOne({ _id: existingTx._id }).session(session);
+        await HourLedgerService.updateRegistrationStatus(regId, session);
+      }
+    }
 
     // Recalculate student balances when lesson status changes (e.g. COMPLETED affects consumed hours)
     await recalculateStudentBalances(lesson.studentId);

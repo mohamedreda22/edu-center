@@ -130,7 +130,8 @@ export const multiTenantPlugin = (schema) => {
       const modelName = this.model?.modelName;
 
       if (isExcluded(modelName)) {
-        return next();
+        next();
+        return;
       }
 
       // 1. Soft Delete Filter
@@ -156,7 +157,8 @@ export const multiTenantPlugin = (schema) => {
     const modelName = this.model()?.modelName;
 
     if (isExcluded(modelName)) {
-      return next();
+      next();
+      return;
     }
 
     const pipeline = this.pipeline();
@@ -179,11 +181,90 @@ export const multiTenantPlugin = (schema) => {
     next();
   });
 
+  // Post-save hook to handle document-level cascading soft deletions
+  schema.post('save', async function (doc, next) {
+    const modelName = doc.constructor?.modelName;
+    if (isExcluded(modelName)) {
+      if (next) {
+        next();
+      }
+      return;
+    }
+
+    if (doc.isDeleted && doc.deletedAt) {
+      try {
+        const { CascadeDeleteService } =
+          await import('../services/cascadeDelete.service.js');
+        await CascadeDeleteService.cascadeSoftDelete(modelName, doc._id, {
+          deletedAt: doc.deletedAt,
+          isDeleted: doc.isDeleted,
+          deletedBy: doc.deletedBy,
+        });
+      } catch (err) {
+        import('../services/logger.js').then((m) =>
+          m.default.error(
+            `[multiTenantPlugin] Post-save cascade failed: ${err.message}`
+          )
+        );
+      }
+    }
+    if (next) {
+      next();
+    }
+  });
+
+  // Pre-update hooks to intercept query-level soft deletions (updateOne, updateMany, findOneAndUpdate)
+  const updateHooks = ['updateOne', 'updateMany', 'findOneAndUpdate'];
+  updateHooks.forEach((hookType) => {
+    schema.pre(hookType, async function (next) {
+      const modelName = this.model?.modelName;
+      if (isExcluded(modelName)) {
+        next();
+        return;
+      }
+
+      const update = this.getUpdate();
+      const $set = update?.$set || update;
+
+      if ($set && ($set.deletedAt || $set.isDeleted)) {
+        try {
+          // Find matching records before they get modified to extract their IDs
+          const docs = await this.model
+            .find(this.getQuery())
+            .session(this.options?.session);
+          const { CascadeDeleteService } =
+            await import('../services/cascadeDelete.service.js');
+
+          for (const doc of docs) {
+            await CascadeDeleteService.cascadeSoftDelete(
+              modelName,
+              doc._id,
+              {
+                deletedAt: $set.deletedAt || new Date(),
+                isDeleted: $set.isDeleted ?? true,
+                deletedBy: $set.deletedBy || null,
+              },
+              this.options?.session
+            );
+          }
+        } catch (err) {
+          import('../services/logger.js').then((m) =>
+            m.default.error(
+              `[multiTenantPlugin] Pre-update cascade failed: ${err.message}`
+            )
+          );
+        }
+      }
+      next();
+    });
+  });
+
   // Hook into document creation (save)
   schema.pre('save', function (next) {
     const modelName = this.constructor?.modelName;
     if (isExcluded(modelName)) {
-      return next();
+      next();
+      return;
     }
 
     const context = getTenantContext();
@@ -203,7 +284,8 @@ export const multiTenantPlugin = (schema) => {
   schema.pre('insertMany', function (next, docs) {
     const modelName = this.modelName;
     if (isExcluded(modelName)) {
-      return next();
+      next();
+      return;
     }
 
     const context = getTenantContext();

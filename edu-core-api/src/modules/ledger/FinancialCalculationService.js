@@ -26,10 +26,10 @@ export const FinancialCalculationService = {
   },
 
   /**
-   * Calculates teacher earnings and institute revenue for a given completed lesson
+   * Calculates teacher earnings and institute revenue for a given lesson (scheduled or completed)
    */
   calculateLessonEarnings: async (lesson) => {
-    if (!lesson || lesson.status !== 'COMPLETED') {
+    if (!lesson) {
       return { teacherEarnings: 0, instituteRevenue: 0, transportDeduction: 0 };
     }
 
@@ -49,11 +49,15 @@ export const FinancialCalculationService = {
       );
     }
 
-    // 2. Determine Teacher Percentage (Default 75%)
-    let teacherPct = teacher.teacherPercentage || 0.75;
-    const settingsPct = await SettingsService.getTeacherPercentage(tenantId);
-    if (typeof settingsPct === 'number') {
-      teacherPct = settingsPct / 100;
+    // 2. Determine Teacher Percentage (Teacher-specific takes precedence, then default 75%)
+    let teacherPct = 0.75;
+    if (typeof teacher.teacherPercentage === 'number' && teacher.teacherPercentage > 0) {
+      teacherPct = teacher.teacherPercentage;
+    } else {
+      const settingsPct = await SettingsService.getTeacherPercentage(tenantId);
+      if (typeof settingsPct === 'number') {
+        teacherPct = settingsPct / 100;
+      }
     }
 
     // 3. Compute earnings based on Compensation Type
@@ -62,7 +66,8 @@ export const FinancialCalculationService = {
       const duration = lesson.durationHours || 1;
       baseEarnings = multiplyFils(stageHourlyRate, duration * teacherPct);
     } else {
-      baseEarnings = multiplyFils(lesson.lessonPrice, teacherPct);
+      const price = typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
+      baseEarnings = multiplyFils(price, teacherPct);
     }
 
     // 4. Transport Deduction
@@ -77,8 +82,9 @@ export const FinancialCalculationService = {
       0,
       subtractFils(baseEarnings, transportDeduction)
     );
+    const price = typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
     const instituteRevenue = subtractFils(
-      lesson.lessonPrice,
+      price,
       netTeacherEarnings
     );
 

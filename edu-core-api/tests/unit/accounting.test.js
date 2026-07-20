@@ -26,7 +26,7 @@ describe('Chart of Accounts & Double-Entry General Ledger Suite', () => {
       const accounts = await Account.find({
         accountNumber: { $regex: tenantId.toString() },
       });
-      expect(accounts).toHaveLength(5);
+      expect(accounts).toHaveLength(7);
 
       const cashAccount = accounts.find((a) =>
         a.accountNumber.endsWith('1010')
@@ -141,6 +141,66 @@ describe('Chart of Accounts & Double-Entry General Ledger Suite', () => {
         referenceId: ledgerEntry._id,
       });
       expect(clearedEntries).toHaveLength(0);
+    });
+  });
+
+  it('should automatically pipe refund entries to Tuition Returns and Cash accounts', async () => {
+    const tenantId = new mongoose.Types.ObjectId();
+    const referenceId = new mongoose.Types.ObjectId();
+
+    await runWithTenant(tenantId, null, async () => {
+      const ledgerEntry = await recordLedgerEntry({
+        studentId: new mongoose.Types.ObjectId(),
+        amount: 15000, // 15 KWD
+        type: 'REFUND',
+        direction: 'OUT',
+        referenceId,
+        referenceModel: 'ManualAdjustment',
+        description: 'استرجاع مالي للرصيد الملغى',
+        tenantId,
+        performedBy: new mongoose.Types.ObjectId(),
+      });
+
+      const coaEntries = await GeneralLedger.find({ referenceId: ledgerEntry._id }).populate('accountId');
+      expect(coaEntries).toHaveLength(2);
+
+      const debitReturns = coaEntries.find((e) => e.accountId.accountNumber.endsWith('4020'));
+      const creditCash = coaEntries.find((e) => e.accountId.accountNumber.endsWith('1010'));
+
+      expect(debitReturns).toBeDefined();
+      expect(debitReturns.debit).toBe(15000);
+      expect(creditCash).toBeDefined();
+      expect(creditCash.credit).toBe(15000);
+    });
+  });
+
+  it('should automatically pipe transport deductions to Tutors Salary and Car Recovery accounts', async () => {
+    const tenantId = new mongoose.Types.ObjectId();
+    const referenceId = new mongoose.Types.ObjectId();
+
+    await runWithTenant(tenantId, null, async () => {
+      const ledgerEntry = await recordLedgerEntry({
+        teacherId: new mongoose.Types.ObjectId(),
+        amount: 500, // 0.5 KWD
+        type: 'TRANSPORT_DEDUCTION',
+        direction: 'OUT',
+        referenceId,
+        referenceModel: 'Lesson',
+        description: 'استقطاع سيارة المعهد عن حصة منجزة',
+        tenantId,
+        performedBy: new mongoose.Types.ObjectId(),
+      });
+
+      const coaEntries = await GeneralLedger.find({ referenceId: ledgerEntry._id }).populate('accountId');
+      expect(coaEntries).toHaveLength(2);
+
+      const debitSalary = coaEntries.find((e) => e.accountId.accountNumber.endsWith('2010'));
+      const creditRecovery = coaEntries.find((e) => e.accountId.accountNumber.endsWith('4030'));
+
+      expect(debitSalary).toBeDefined();
+      expect(debitSalary.debit).toBe(500);
+      expect(creditRecovery).toBeDefined();
+      expect(creditRecovery.credit).toBe(500);
     });
   });
 

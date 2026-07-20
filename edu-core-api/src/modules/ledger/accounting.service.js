@@ -32,6 +32,18 @@ const STANDARD_ACCOUNTS = [
     description: 'الإيرادات المحصلة من تسجيل الطلاب وحزم الساعات',
   },
   {
+    accountNumber: '4020',
+    name: 'مردودات الرسوم والدفعات (Tuition Returns & Refunds)',
+    type: 'REVENUE',
+    description: 'المبالغ المستردة للطلاب مقابل الساعات الملغاة أو تعديل الباقات',
+  },
+  {
+    accountNumber: '4030',
+    name: 'إيرادات خدمات التوصيل (Car Recovery Revenue)',
+    type: 'REVENUE',
+    description: 'عائدات رسوم مواصلات سيارة المعهد المستقطعة من المعلمين',
+  },
+  {
     accountNumber: '5010',
     name: 'مصاريف التشغيل والأكاديمية (Operating Expenses)',
     type: 'EXPENSE',
@@ -111,12 +123,16 @@ export const AccountingService = {
 
     const cashAccount = await findAccount('1010');
     const tuitionRevenue = await findAccount('4010');
+    const tuitionReturns = await findAccount('4020');
+    const carRecoveryRevenue = await findAccount('4030');
     const teacherSalaryPayable = await findAccount('2010');
     const operatingExpenses = await findAccount('5010');
 
     if (
       !cashAccount ||
       !tuitionRevenue ||
+      !tuitionReturns ||
+      !carRecoveryRevenue ||
       !teacherSalaryPayable ||
       !operatingExpenses
     ) {
@@ -190,6 +206,50 @@ export const AccountingService = {
         },
         {
           accountId: cashAccount._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: 0,
+          credit: amount,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        }
+      );
+    } else if (ledgerEntry.type === 'REFUND') {
+      // Debit: Tuition Returns & Refunds (Contra-Revenue increases) | Credit: Cash on Hand (Asset decreases)
+      doubleEntries.push(
+        {
+          accountId: tuitionReturns._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: amount,
+          credit: 0,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        },
+        {
+          accountId: cashAccount._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: 0,
+          credit: amount,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        }
+      );
+    } else if (ledgerEntry.type === 'TRANSPORT_DEDUCTION') {
+      // Debit: Tutors Salary Payable (Liability decreases by transport fee) | Credit: Car Recovery Revenue (Revenue increases)
+      doubleEntries.push(
+        {
+          accountId: teacherSalaryPayable._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: amount,
+          credit: 0,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        },
+        {
+          accountId: carRecoveryRevenue._id,
           referenceId: ledgerEntry._id,
           referenceModel: 'FinancialLedger',
           debit: 0,

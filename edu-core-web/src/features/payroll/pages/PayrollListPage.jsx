@@ -1,38 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  RefreshCcw,
-  CheckCircle,
-  Calculator,
-  Eye,
-  ShieldAlert,
-  Check,
-  Clock,
-  Loader2,
-  XCircle,
-  Ban,
-  Lock,
-} from 'lucide-react';
+import { RefreshCcw, CheckCircle, Calculator, Send, Award } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 import { payrollApi } from '../services/payrollApi';
 
 import { teacherApi } from '@/features/teachers/services/teacherApi';
-import { usePermissions } from '@/features/auth/hooks/usePermissions';
+import { useAuth } from '@/features/auth/AuthContext';
 import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/button';
 import { formatMoney } from '@/shared/utils/money';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/shared/components/ui/dialog';
+import { toast } from 'sonner';
 
 const PayrollListPage = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { user } = usePermissions();
   const [selectedTeacher, setSelectedTeacher] = useState('');
@@ -120,6 +102,32 @@ const PayrollListPage = () => {
     onSuccess: () => {
       toast.success('تم صرف كشف الراتب بنجاح، وتم تسجيل الحركات في القيود المحاسبية والصندوق');
       queryClient.invalidateQueries(['payroll']);
+      toast.success('تم صرف الراتب وتسجيل القيد المزدوج بالدفاتر المالية بنجاح');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل صرف الراتب');
+    },
+  });
+
+  const submitApprovalMutation = useMutation({
+    mutationFn: payrollApi.submitApproval,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['payroll']);
+      toast.success('تم تقديم سجل الراتب وسلسلة الاعتمادات بنجاح');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل تقديم طلب الاعتماد');
+    },
+  });
+
+  const approvePayrollMutation = useMutation({
+    mutationFn: payrollApi.approvePayroll,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['payroll']);
+      toast.success('تم توقيع واعتماد سجل الراتب بنجاح');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل توقيع الاعتماد');
     },
     onError: (err) => {
       toast.error(err.response?.data?.error?.message || 'فشل عملية صرف الراتب');
@@ -158,103 +166,79 @@ const PayrollListPage = () => {
       cell: (row) => formatMoney(row.finalAmount),
     },
     {
-      header: 'الحالة',
+      header: 'الحالة المحاسبية',
       cell: (row) => {
-        // Map status to Arabic badges
         const status = row.status || (row.paid ? 'PAID' : 'CALCULATED');
-        if (status === 'PAID') {
-          return (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-green-50 text-green-700 border border-green-200">
-              <CheckCircle className="h-3.5 w-3.5 ml-1" />
-              تم الصرف
-            </span>
-          );
-        }
-        if (status === 'APPROVED') {
-          return (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
-              <Check className="h-3.5 w-3.5 ml-1" />
-              معتمد (جاهز للصرف)
-            </span>
-          );
-        }
-        if (status === 'PENDING_APPROVAL') {
-          return (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
-              <Clock className="h-3.5 w-3.5 ml-1" />
-              قيد المراجعة والاعتماد
-            </span>
-          );
-        }
+        const badgeStyles = {
+          CALCULATED: 'bg-slate-100 text-slate-800 border-slate-200',
+          PENDING_APPROVAL: 'bg-amber-100 text-yellow-800 border-yellow-200 animate-pulse',
+          APPROVED: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+          PAID: 'bg-green-100 text-green-800 border-green-200',
+        };
+        const statusLabels = {
+          CALCULATED: 'محسوب آلياً',
+          PENDING_APPROVAL: 'بانتظار الاعتماد',
+          APPROVED: 'جاهز للصرف',
+          PAID: 'تم الصرف',
+        };
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700 border border-slate-200">
-            <Lock className="h-3.5 w-3.5 ml-1" />
-            مسودة محتسبة
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeStyles[status] || ''}`}>
+            {statusLabels[status] || status}
           </span>
         );
       },
     },
     {
-      header: 'إجراءات سير العمل والاعتمادات',
+      header: 'إجراءات الحوكمة المالية',
       cell: (row) => {
         const status = row.status || (row.paid ? 'PAID' : 'CALCULATED');
+        const isAdminOrAccountant = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
+
         return (
           <div className="flex items-center gap-2">
-            {/* 1. CALCULATED: Action to submit for approval */}
             {status === 'CALCULATED' && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => submitApprovalMutation.mutate(row._id)}
                 disabled={submitApprovalMutation.isPending}
-                className="gap-1 h-8 rounded-xl font-bold bg-slate-50 border-slate-200 hover:bg-slate-100 text-xs"
+                className="gap-1 h-8 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
               >
-                <RefreshCcw className="h-3 w-3 ml-0.5" />
+                <Send className="h-3 w-3" />
                 تقديم للاعتماد
               </Button>
             )}
 
-            {/* 2. PENDING_APPROVAL: Action to view levels, approve, or reject */}
-            {status === 'PENDING_APPROVAL' && (
+            {status === 'PENDING_APPROVAL' && isAdminOrAccountant && (
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
-                onClick={() => openApprovalFlow(row._id)}
-                className="gap-1 h-8 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white text-xs"
+                onClick={() => approvePayrollMutation.mutate(row._id)}
+                disabled={approvePayrollMutation.isPending}
+                className="gap-1 h-8 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
               >
-                <Eye className="h-3 w-3 ml-0.5" />
-                مراجعة واعتماد
+                <Award className="h-3 w-3" />
+                توقيع واعتماد
               </Button>
             )}
 
-            {/* 3. APPROVED: Action to pay salary */}
             {status === 'APPROVED' && (
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={() => markPaidMutation.mutate(row._id)}
                 disabled={markPaidMutation.isPending}
-                className="gap-1 h-8 rounded-xl font-black bg-green-600 hover:bg-green-700 text-white text-xs"
+                className="gap-1 h-8 bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
               >
-                <CheckCircle className="h-3 w-3 ml-0.5" />
-                صرف الراتب والقيود
+                <CheckCircle className="h-3 w-3" />
+                صرف الراتب
               </Button>
             )}
 
-            {/* PAID: No active actions except tracking log */}
             {status === 'PAID' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openApprovalFlow(row._id)}
-                className="gap-1 h-8 rounded-xl font-bold text-slate-500 hover:bg-slate-50 text-xs"
-              >
-                <Eye className="h-3 w-3 ml-0.5" />
-                تتبع التواقيع
-              </Button>
+              <span className="text-xs text-muted-foreground">صرف كامل بالدفاتر</span>
             )}
 
-            {/* Recalculate (always available except when paid) */}
             {status !== 'PAID' && (
               <Button
                 variant="ghost"
@@ -267,9 +251,9 @@ const PayrollListPage = () => {
                   })
                 }
                 disabled={generateMutation.isPending}
-                className="gap-1 h-8 rounded-xl text-xs hover:bg-slate-100"
+                className="gap-1 h-8"
               >
-                <RefreshCcw className="h-3 w-3 ml-0.5" />
+                <RefreshCcw className="h-3 w-3" />
                 تحديث
               </Button>
             )}

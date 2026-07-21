@@ -46,11 +46,15 @@ export const calculateTeacherMetrics = async (teacher) => {
     0
   );
 
-  // 4. Gross Due (Sum of Teacher Due from Student Registrations)
+  // 4. Gross Due (Sum of Teacher Due from Student Registrations) - Optimized to eliminate N+1 query
   const regs = await StudentRegistration.find({ teacherId });
+  const studentIds = [...new Set(regs.map((r) => r.studentId).filter(Boolean))];
+  const students = studentIds.length > 0 ? await Student.find({ _id: { $in: studentIds } }) : [];
+  const studentMap = new Map(students.map((s) => [s._id.toString(), s]));
+
   let dueBeforeDeduction = 0;
   for (const reg of regs) {
-    const student = await Student.findById(reg.studentId);
+    const student = studentMap.get(reg.studentId?.toString());
     const teacherDue = await calculateRegistrationTeacherDue(
       reg,
       student?.grade,
@@ -72,18 +76,28 @@ export const calculateTeacherMetrics = async (teacher) => {
   }
 
   // 6. Net Due
-  const netDue = Math.max(0, dueBeforeDeduction - transportationDeduction);
+  const netDue = dueBeforeDeduction - transportationDeduction;
 
-  // 7. Paid to Teacher (Sum of TEACHER_PAYMENT ledger entries)
-  const payments = await FinancialLedger.find({
-    teacherId,
-    type: 'TEACHER_PAYMENT',
-    direction: 'OUT',
-  });
-  const paidToTeacher = payments.reduce((sum, p) => sum + p.amount, 0);
+  // 7. Paid to Teacher (Sum of TEACHER_PAYMENT ledger entries) - Optimized using Aggregation Pipeline
+  const paymentAggregation = await FinancialLedger.aggregate([
+    {
+      $match: {
+        teacherId: teacher._id,
+        type: 'TEACHER_PAYMENT',
+        direction: 'OUT',
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalPaid: { $sum: '$amount' },
+      },
+    },
+  ]);
+  const paidToTeacher = paymentAggregation[0]?.totalPaid || 0;
 
   // 8. Remaining Due
-  const remainingDue = Math.max(0, netDue - paidToTeacher);
+  const remainingDue = netDue - paidToTeacher;
 
   return {
     registrationCount,

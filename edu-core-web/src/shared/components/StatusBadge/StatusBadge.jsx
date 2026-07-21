@@ -30,6 +30,13 @@ const domainConfig = {
     CANCELLED:
       'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100',
   },
+  registration: {
+    ACTIVE:
+      'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100',
+    COMPLETED:
+      'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100',
+    CANCELLED: 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100',
+  },
 };
 
 const labels = {

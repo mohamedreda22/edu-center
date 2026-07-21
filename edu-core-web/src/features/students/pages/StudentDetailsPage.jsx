@@ -18,6 +18,7 @@ import { studentApi } from '../services/studentApi';
 
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
+import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
@@ -283,11 +284,7 @@ const StudentDetailsPage = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${reg.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}
-                        >
-                          {reg.status}
-                        </span>
+                        <StatusBadge status={reg.status} domain="registration" />
                         <Button
                           variant="ghost"
                           size="icon"

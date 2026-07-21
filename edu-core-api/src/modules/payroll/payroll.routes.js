@@ -54,4 +54,10 @@ router.patch(
   payrollController.markPaid
 );
 
+router.patch(
+  '/:id/adjustments',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  payrollController.updatePayrollAdjustments
+);
+
 export default router;

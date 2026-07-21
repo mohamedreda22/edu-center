@@ -71,7 +71,14 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
       transportDeductions = multiplyFils(TRANSPORT_RATE, completedLessons);
     }
 
-    const finalAmount = subtractFils(teacherEarnings, transportDeductions);
+    // Preserve existing record's bonuses and penalties to prevent recalculations from wiping adjustments
+    const existingRecord = await PayrollRecord.findOne({ teacherId, month, year }).session(session);
+    const bonuses = existingRecord ? existingRecord.bonuses : 0;
+    const penalties = existingRecord ? existingRecord.penalties : 0;
+
+    const totalEarnings = teacherEarnings + bonuses;
+    const totalDeductions = transportDeductions + penalties;
+    const finalAmount = Math.max(0, totalEarnings - totalDeductions);
 
     // 5. Upsert PayrollRecord with CALCULATED status
     const payrollRecord = await PayrollRecord.findOneAndUpdate(
@@ -82,6 +89,8 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
         teacherEarnings,
         instituteRevenue,
         transportDeductions,
+        bonuses,
+        penalties,
         finalAmount,
         status: 'CALCULATED',
       },
@@ -451,5 +460,64 @@ export const rejectPayroll = async (id, userId, userRole, rejectReason) => {
     }
 
     throw new ValidationError('لا يوجد طلب اعتماد قيد الانتظار لهذا السجل');
+  });
+};
+
+/**
+ * Update payroll bonuses, penalties, and notes (Admin/Accountant only)
+ */
+export const updatePayrollAdjustments = async (id, adjustments, userId) => {
+  return withTransaction(async (session) => {
+    const record = await PayrollRecord.findById(id).session(session);
+    if (!record) {
+      throw new NotFoundError('سجل الراتب غير موجود');
+    }
+
+    if (record.status === 'PAID') {
+      throw new ValidationError('لا يمكن تعديل كشف راتب تم صرفه وتسويته بالفعل');
+    }
+
+    const previousValue = record.toObject();
+
+    const bonuses = typeof adjustments.bonuses === 'number' ? toFils(adjustments.bonuses) : record.bonuses;
+    const penalties = typeof adjustments.penalties === 'number' ? toFils(adjustments.penalties) : record.penalties;
+    const notes = adjustments.notes !== undefined ? adjustments.notes : record.notes;
+
+    // Calculate finalAmount = teacherEarnings + bonuses - transportDeductions - penalties
+    const totalEarnings = record.teacherEarnings + bonuses;
+    const totalDeductions = record.transportDeductions + penalties;
+    const finalAmount = Math.max(0, totalEarnings - totalDeductions);
+
+    record.bonuses = bonuses;
+    record.penalties = penalties;
+    record.notes = notes;
+    record.finalAmount = finalAmount;
+
+    await record.save({ session });
+
+    await PayrollTransaction.create(
+      [
+        {
+          teacherId: record.teacherId,
+          userId,
+          payrollRecordId: record._id,
+          action: 'UPDATE',
+          previousValue,
+          newValue: record.toObject(),
+        },
+      ],
+      { session }
+    );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'UPDATE_PAYROLL_ADJUSTMENTS',
+      entityType: 'PayrollRecord',
+      entityId: record._id,
+      details: { month: record.month, year: record.year, bonuses, penalties },
+    });
+
+    return record;
   });
 };

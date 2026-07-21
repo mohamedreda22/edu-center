@@ -51,6 +51,8 @@ const PayrollListPage = () => {
       payrollApi.getAllPayroll({ teacherId: selectedTeacher, month, year }),
   });
 
+  const activeRecord = data?.data?.find((r) => r._id === activePayrollId);
+
   // 2. Fetch Teachers
   const { data: teachers } = useQuery({
     queryKey: ['teachers'],
@@ -183,8 +185,25 @@ const PayrollListPage = () => {
     { header: 'الشهر/السنة', cell: (row) => `${row.month}/${row.year}` },
     { header: 'الحصص المكتملة', accessor: 'completedLessons' },
     {
-      header: 'إجمالي المستحق',
-      cell: (row) => formatMoney(row.finalAmount),
+      header: 'المستحق الأساسي',
+      cell: (row) => formatMoney(row.teacherEarnings || 0),
+    },
+    {
+      header: 'المكافآت (+)',
+      cell: (row) => formatMoney(row.bonuses || 0),
+    },
+    {
+      header: 'الخصومات (-)',
+      cell: (row) =>
+        formatMoney((row.transportDeductions || 0) + (row.penalties || 0)),
+    },
+    {
+      header: 'صافي المستحق',
+      cell: (row) => (
+        <span className="font-extrabold text-slate-800">
+          {formatMoney(row.finalAmount)}
+        </span>
+      ),
     },
     {
       header: 'الحالة المحاسبية',
@@ -421,6 +440,73 @@ const PayrollListPage = () => {
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-center text-xs font-bold">
                   لم يتم تفعيل سلسلة التواقيع الإلكترونية لهذا السجل بعد. يرجى
                   تقديمه للاعتماد أولاً.
+                </div>
+              )}
+
+              {/* High-Fidelity Financial Breakdown Card */}
+              {activeRecord && (
+                <div className="p-5 border border-slate-200 bg-slate-50 rounded-2xl space-y-3">
+                  <h4 className="text-sm font-black text-slate-800 border-b pb-2">
+                    التفاصيل المالية لكشف راتب مركز التكلفة:
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        الحصص المكتملة:
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {activeRecord.completedLessons} حصة
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        إجمالي قيمة الدروس:
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {formatMoney(activeRecord.totalLessonValue || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        المستحق الأساسي للمعلم:
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {formatMoney(activeRecord.teacherEarnings || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        خصومات المواصلات (السيارة):
+                      </span>
+                      <span className="font-bold text-red-600">
+                        -{formatMoney(activeRecord.transportDeductions || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        المكافآت الإدارية (+):
+                      </span>
+                      <span className="font-bold text-green-600">
+                        +{formatMoney(activeRecord.bonuses || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">
+                        الجزاءات والاستقطاعات (-):
+                      </span>
+                      <span className="font-bold text-red-600">
+                        -{formatMoney(activeRecord.penalties || 0)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="border-t pt-3 flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100">
+                    <span className="text-xs font-black text-slate-600">
+                      صافي المستحق النهائي للصرف:
+                    </span>
+                    <span className="text-lg font-black text-primary">
+                      {formatMoney(activeRecord.finalAmount || 0)}
+                    </span>
+                  </div>
                 </div>
               )}
 

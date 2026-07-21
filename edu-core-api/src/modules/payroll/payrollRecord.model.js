@@ -37,6 +37,16 @@ const payrollRecordSchema = new mongoose.Schema(
       type: Number, // in fils
       default: 0,
     },
+    bonuses: {
+      type: Number, // in fils
+      default: 0,
+      min: 0,
+    },
+    penalties: {
+      type: Number, // in fils
+      default: 0,
+      min: 0,
+    },
     finalAmount: {
       type: Number, // in fils
       default: 0,

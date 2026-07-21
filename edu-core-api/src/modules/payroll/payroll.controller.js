@@ -15,6 +15,19 @@ export const generatePayroll = asyncHandler(async (req, res) => {
   });
 });
 
+export const updatePayrollAdjustments = asyncHandler(async (req, res) => {
+  const { bonuses, penalties, notes } = req.body;
+  const record = await payrollService.updatePayrollAdjustments(
+    req.params.id,
+    { bonuses, penalties, notes },
+    req.user.id
+  );
+  res.status(200).json({
+    success: true,
+    data: record,
+  });
+});
+
 export const getApprovalDetails = asyncHandler(async (req, res) => {
   const approvalData = await payrollService.getApprovalDetails(req.params.id);
   res.status(200).json({

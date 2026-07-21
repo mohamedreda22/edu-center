@@ -1,102 +1,28 @@
 import StudentRegistration from './registration.model.js';
 import Student from './student.model.js';
-import { toFils } from '../../shared/utils/money.js';
-import Lesson from '../lessons/lesson.model.js';
 import Payment from '../payments/payment.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
-
-/**
- * Parses HH:mm format to minutes since midnight
- */
-const parseTimeToMinutes = (timeStr) => {
-  if (!timeStr) {
-    return 0;
-  }
-  const parts = timeStr.split(':');
-  if (parts.length !== 2) {
-    return 0;
-  }
-  return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-};
+import { PricingService } from '../../shared/services/pricing.service.js';
+import HourLedgerService from './hourLedger.service.js';
 
 export const StudentCalculationService = {
   /**
    * Calculates the weekly hours for a registration
    */
-  calculateRegistrationWeeklyHours: (reg) => {
-    if (!reg || !reg.from1 || !reg.to1) {
-      return 0;
-    }
-
-    const duration1 = Math.max(
-      0,
-      parseTimeToMinutes(reg.to1) - parseTimeToMinutes(reg.from1)
-    );
-    let duration2 = 0;
-    if (reg.from2 && reg.to2) {
-      duration2 = Math.max(
-        0,
-        parseTimeToMinutes(reg.to2) - parseTimeToMinutes(reg.from2)
-      );
-    }
-
-    const totalMinutes = duration1 + duration2;
-    return Math.round((totalMinutes / 60) * 10) / 10;
-  },
+  calculateRegistrationWeeklyHours: PricingService.calculateWeeklyHours,
 
   /**
    * Calculates student sibling discount percentage
    */
-  getSiblingDiscountPercentage: async (studentId) => {
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return 0;
-    }
-
-    let filter = { tenantId: student.tenantId };
-    if (student.siblingGroup && student.siblingGroup.trim() !== '') {
-      filter.siblingGroup = student.siblingGroup.trim();
-    } else {
-      filter.parentPhone = student.parentPhone;
-    }
-
-    const siblings = await Student.find(filter).sort({ createdAt: 1 });
-
-    if (
-      siblings.length > 1 &&
-      siblings[0]._id.toString() !== studentId.toString()
-    ) {
-      return SettingsService.getSiblingDiscountPct(student.tenantId);
-    }
-
-    return 0;
-  },
+  getSiblingDiscountPercentage: PricingService.getSiblingDiscountPercentage,
 
   /**
    * Calculates student registration package totals
    */
-  calculateRegistrationTotals: async (
-    studentId,
-    pricePerHour,
-    purchasedHours
-  ) => {
-    const priceInFils = toFils(pricePerHour);
-    const discountPct =
-      await StudentCalculationService.getSiblingDiscountPercentage(studentId);
-    const baseTotal = priceInFils * purchasedHours;
-    const discountAmount = Math.round(baseTotal * (discountPct / 100));
-    const totalAmount = baseTotal - discountAmount;
-
-    return {
-      priceInFils,
-      discountPct,
-      discountAmount,
-      totalAmount,
-    };
-  },
+  calculateRegistrationTotals: PricingService.calculateRegistrationTotals,
 
   /**
-   * Computes student aggregates chronologically with optional DB persistence (FIFO hours allocation)
+   * Computes student aggregates chronologically with optional DB persistence (Pure Immutable Ledger-based)
    */
   recalculateStudentBalances: async (studentId, save = false) => {
     const student = await Student.findById(studentId);
@@ -109,55 +35,36 @@ export const StudentCalculationService = {
       registrationDate: 1,
     });
 
-    // 2. Fetch all completed lessons
-    const completedLessons = await Lesson.find({
-      studentId,
-      status: 'COMPLETED',
-    });
+    // 2. If save is true, sync registrations from HourTransaction first to ensure exact integrity!
+    if (save) {
+      for (const reg of regs) {
+        await HourLedgerService.updateRegistrationStatus(reg._id);
+      }
+      // Reload registrations to get updated stored values
+      const updatedRegs = await StudentRegistration.find({ studentId }).sort({
+        registrationDate: 1,
+      });
+      regs.length = 0;
+      regs.push(...updatedRegs);
+    }
 
-    // 3. Compute total consumed hours
-    const totalConsumedHours = completedLessons.reduce(
-      (sum, lesson) => sum + (lesson.durationHours || 1),
-      0
-    );
+    // 3. Compute totals directly from registration state (backed by HourTransactions)
+    const totalPurchasedHours = regs.reduce((sum, r) => sum + r.purchasedHours, 0);
+    const totalConsumedHours = regs.reduce((sum, r) => sum + r.consumedHours, 0);
+    const remainingHours = totalPurchasedHours - totalConsumedHours;
 
-    // 4. Distribute consumed hours across registrations in FIFO order
-    let remainingConsumed = totalConsumedHours;
+    // Set primaryRow flag for UI presentation
     let idx = 0;
     for (const reg of regs) {
-      const allocated = Math.min(reg.purchasedHours, remainingConsumed);
-      reg.consumedHours = allocated;
-      remainingConsumed = Math.max(0, remainingConsumed - allocated);
-
-      if (reg.consumedHours >= reg.purchasedHours) {
-        reg.status = 'COMPLETED';
-      } else {
-        reg.status = 'ACTIVE';
-      }
-
       reg.primaryRow = idx === 0;
       idx++;
-
       if (save) {
         await reg.save();
       }
     }
 
-    // Calculate totals
-    const totalPurchasedHours = regs.reduce(
-      (sum, r) => sum + r.purchasedHours,
-      0
-    );
-    const remainingHours = Math.max(
-      0,
-      totalPurchasedHours - totalConsumedHours
-    );
-
-    // 5. Financial Outstanding Balance
-    const totalRegistrationsAmount = regs.reduce(
-      (sum, r) => sum + r.totalAmount,
-      0
-    );
+    // 4. Financial Outstanding Balance
+    const totalRegistrationsAmount = regs.reduce((sum, r) => sum + r.totalAmount, 0);
 
     const totalPaidPayments = (
       await Payment.find({ studentId, status: 'PAID' })
@@ -165,25 +72,21 @@ export const StudentCalculationService = {
 
     const outstandingBalance = totalRegistrationsAmount - totalPaidPayments;
 
-    // 6. Aggregate calculations as requested by the spec
+    // 5. Weekly Hours
     const activeRegs = regs.filter((r) => r.status === 'ACTIVE');
     const weeklyHours = activeRegs.reduce(
-      (sum, r) =>
-        sum + StudentCalculationService.calculateRegistrationWeeklyHours(r),
+      (sum, r) => sum + PricingService.calculateWeeklyHours(r),
       0
     );
 
-    // Sum up teacher due of every registration
-    const { TeacherCalculationService } =
-      await import('../teachers/TeacherCalculationService.js');
+    // 6. Sum up teacher due of every registration
     let totalTeacherDue = 0;
     for (const r of regs) {
-      const teacherDue =
-        await TeacherCalculationService.calculateRegistrationTeacherDue(
-          r,
-          student.grade,
-          student.tenantId
-        );
+      const teacherDue = await PricingService.calculateRegistrationTeacherDue(
+        r,
+        student.grade,
+        student.tenantId
+      );
       totalTeacherDue += teacherDue;
     }
 
@@ -200,9 +103,7 @@ export const StudentCalculationService = {
     }
 
     // Balance Alert:
-    const lowHoursThreshold = await SettingsService.getLowHoursThreshold(
-      student.tenantId
-    );
+    const lowHoursThreshold = await SettingsService.getLowHoursThreshold(student.tenantId);
     let balanceAlert = 'OK';
     if (remainingHours < 0) {
       balanceAlert = 'Hours Exceeded';

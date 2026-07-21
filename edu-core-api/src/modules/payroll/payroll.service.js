@@ -78,7 +78,7 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 
     const totalEarnings = teacherEarnings + bonuses;
     const totalDeductions = transportDeductions + penalties;
-    const finalAmount = Math.max(0, totalEarnings - totalDeductions);
+    const finalAmount = totalEarnings - totalDeductions;
 
     // 5. Upsert PayrollRecord with CALCULATED status
     const payrollRecord = await PayrollRecord.findOneAndUpdate(
@@ -486,7 +486,7 @@ export const updatePayrollAdjustments = async (id, adjustments, userId) => {
     // Calculate finalAmount = teacherEarnings + bonuses - transportDeductions - penalties
     const totalEarnings = record.teacherEarnings + bonuses;
     const totalDeductions = record.transportDeductions + penalties;
-    const finalAmount = Math.max(0, totalEarnings - totalDeductions);
+    const finalAmount = totalEarnings - totalDeductions;
 
     record.bonuses = bonuses;
     record.penalties = penalties;

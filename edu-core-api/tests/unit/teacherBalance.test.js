@@ -20,6 +20,7 @@ jest.unstable_mockModule(
 jest.unstable_mockModule('../../src/modules/students/student.model.js', () => ({
   default: {
     findById: jest.fn(),
+    find: jest.fn(),
   },
 }));
 
@@ -41,6 +42,7 @@ jest.unstable_mockModule(
 jest.unstable_mockModule('../../src/modules/ledger/ledger.model.js', () => ({
   default: {
     find: jest.fn(),
+    aggregate: jest.fn(),
   },
 }));
 
@@ -106,15 +108,10 @@ describe('Teacher Metrics & Balances Calculation Service', () => {
     const reg2 = { studentId: 'student2' };
     StudentRegistration.find.mockResolvedValue([reg1, reg2]);
 
-    Student.findById.mockImplementation((id) => {
-      if (id === 'student1') {
-        return Promise.resolve({ grade: 'ابتدائي' });
-      }
-      if (id === 'student2') {
-        return Promise.resolve({ grade: 'ثانوي' });
-      }
-      return Promise.resolve(null);
-    });
+    Student.find.mockResolvedValue([
+      { _id: 'student1', grade: 'ابتدائي' },
+      { _id: 'student2', grade: 'ثانوي' },
+    ]);
 
     calculateRegistrationTeacherDue.mockImplementation((reg) => {
       if (reg.studentId === 'student1') {
@@ -134,9 +131,8 @@ describe('Teacher Metrics & Balances Calculation Service', () => {
     });
 
     // 5. Mock Ledger entries (Paid to Teacher)
-    FinancialLedger.find.mockResolvedValue([
-      { amount: 40000, type: 'TEACHER_PAYMENT', direction: 'OUT' }, // 40 KD
-      { amount: 30000, type: 'TEACHER_PAYMENT', direction: 'OUT' }, // 30 KD
+    FinancialLedger.aggregate.mockResolvedValue([
+      { _id: null, totalPaid: 70000 },
     ]);
 
     // Calculate

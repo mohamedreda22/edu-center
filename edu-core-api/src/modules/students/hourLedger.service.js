@@ -103,7 +103,7 @@ export const HourLedgerService = {
     const negativeAdjust = negativeAdjustResult[0]?.total || 0;
     const totalConsumed = Math.abs(baseConsumed + negativeAdjust);
 
-    const remaining = Math.max(0, totalPurchased - totalConsumed);
+    const remaining = totalPurchased - totalConsumed;
     const status = remaining <= 0 ? 'COMPLETED' : 'ACTIVE';
 
     await StudentRegistration.updateOne(

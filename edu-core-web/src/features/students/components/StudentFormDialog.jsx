@@ -19,7 +19,8 @@ import {
   Car,
   Award,
   Plus,
-  Trash2
+  Trash2,
+  Coins
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -82,6 +83,12 @@ const StudentFormDialog = ({
 }) => {
   const [activeTab, setActiveTab] = useState('personal');
   const [percentagePreset, setPercentagePreset] = useState('75');
+
+  // Custom states for payment installment logic
+  const [isInstallment, setIsInstallment] = useState('no');
+  const [installmentsCount, setInstallmentsCount] = useState(2);
+  const [installmentValue, setInstallmentsValue] = useState(0);
+  const [priceOverrideReason, setPriceOverrideReason] = useState('');
 
   // Dynamic schedule list containing day elements [{ id, day, from, to }]
   const [scheduleDays, setScheduleDays] = useState([{ id: 1, day: '', from: '', to: '' }]);
@@ -147,7 +154,11 @@ const StudentFormDialog = ({
   const unifiedPhoneWatch = watch('unifiedPhone');
   const selectedTeacherId = watch('teacherId');
   const watchCustomPercentage = watch('teacherPercentageSnapshot');
+
   const selectedSubject = watch('subject');
+  const watchPurchasedHours = watch('purchasedHours');
+  const watchPricePerHour = watch('pricePerHour');
+  const watchInitialPaidAmount = watch('initialPaidAmount');
 
   // Load teachers for the academic assignment section
   const { data: teachersRes } = useQuery({
@@ -176,6 +187,26 @@ const StudentFormDialog = ({
       return bTeaches - aTeaches; // Descending (1 first)
     });
   }, [teachers, selectedSubject]);
+
+  // Dynamic smart price calculator
+  const calculatedTotalAmount = (watchPurchasedHours || 0) * (watchPricePerHour || 0);
+
+  // Automatically update the suggested payment amount based on subject price setup
+  useEffect(() => {
+    if (calculatedTotalAmount > 0) {
+      setValue('initialPaidAmount', calculatedTotalAmount);
+    }
+  }, [calculatedTotalAmount, setValue]);
+
+  // Adjust installment share automatically when count or total switches
+  useEffect(() => {
+    if (watchInitialPaidAmount > 0 && installmentsCount > 0) {
+      const perDue = parseFloat((watchInitialPaidAmount / installmentsCount).toFixed(3));
+      setInstallmentsValue(perDue);
+    } else {
+      setInstallmentsValue(0);
+    }
+  }, [watchInitialPaidAmount, installmentsCount]);
 
   // Handle preset change to sync into react-hook-form value
   useEffect(() => {
@@ -311,6 +342,8 @@ const StudentFormDialog = ({
       });
       setPercentagePreset('75');
       setScheduleDays([{ id: 1, day: '', from: '', to: '' }]);
+      setIsInstallment('no');
+      setPriceOverrideReason('');
       setActiveTab('personal');
     }
   }, [open, reset, initialData]);
@@ -339,10 +372,22 @@ const StudentFormDialog = ({
     sanitized.studentPhone = data.unifiedPhone;
     sanitized.whatsapp = data.unifiedPhone;
 
-    // Push specialization into notes or subjects to avoid DB desync if custom fields don't exist
+    // Attach custom audit logs directly to notes
+    let enrichedNotes = data.notes || '';
     if (data.studentSpecialization) {
-      sanitized.notes = `${data.notes || ''} [التخصص المستهدف: ${data.studentSpecialization}]`.trim();
+      enrichedNotes += ` [التخصص المستهدف: ${data.studentSpecialization}]`;
     }
+    if (priceOverrideReason) {
+      enrichedNotes += ` [سبب تعديل سعر الباقة: ${priceOverrideReason}]`;
+    }
+    if (isInstallment === 'yes') {
+      enrichedNotes += ` [نظام دفع الأقساط: مقسط على ${installmentsCount} دفعات، قيمة الدفعة ${installmentValue} KWD]`;
+    }
+    sanitized.notes = enrichedNotes.trim();
+
+    // Auto record dates and times
+    sanitized.enrollmentDate = new Date().toISOString().split('T')[0];
+    sanitized.status = 'ACTIVE';
 
     if (!sanitized.subject) {
       delete sanitized.subject;
@@ -494,7 +539,7 @@ const StudentFormDialog = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pt-2">
                 <div className="space-y-2">
                   <Label htmlFor="siblingGroup" className="font-semibold text-slate-700 text-sm">كود مجموعة الأشقاء (اختياري)</Label>
                   <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
@@ -503,24 +548,6 @@ const StudentFormDialog = ({
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700 text-sm">تاريخ الميلاد</Label>
                   <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="enrollmentDate" className="font-semibold text-slate-700 text-sm">تاريخ التسجيل بالمركز</Label>
-                  <Input id="enrollmentDate" type="date" {...register('enrollmentDate')} className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="font-semibold text-slate-700 text-sm">حالة ملف الطالب</Label>
-                  <select
-                    id="status"
-                    {...register('status')}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="ACTIVE">نشط (Active)</option>
-                    <option value="SUSPENDED">موقوف مؤقتاً (Suspended)</option>
-                    <option value="WITHDRAWN">منسحب (Withdrawn)</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -590,7 +617,7 @@ const StudentFormDialog = ({
                 <div className="space-y-2">
                   <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
                     <Award className="h-4 w-4 text-primary shrink-0" />
-                    <span>التخصص الدراسي للطابة (علمي / أدبي)</span>
+                    <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
                   </Label>
                   <Input
                     id="studentSpecialization"
@@ -677,20 +704,32 @@ const StudentFormDialog = ({
               </div>
             </div>
 
-            {/* Notes and preferences */}
+            {/* Smart notes and preferred timings */}
             <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
                 <FileText className="h-5 w-5" />
-                <span>ملاحظات ومواعيد مفضلة إضافية</span>
+                <span>الرغبات الذكية للمواعيد والملاحظات</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="preferredSchedule" className="font-semibold text-slate-700 text-sm">المواعيد المفضلة بشكل عام</Label>
-                  <Input id="preferredSchedule" {...register('preferredSchedule')} placeholder="مثال: مساء الأحد والثلاثاء" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                  <Label htmlFor="preferredSchedule" className="font-bold text-slate-700 text-sm">المواعيد المفضلة للطالب (بشكل مفصل)</Label>
+                  <textarea
+                    id="preferredSchedule"
+                    {...register('preferredSchedule')}
+                    placeholder="أدخل رغبات وتفضيلات المواعيد بالتفصيل لتسهيل الحجز مستقبلاً..."
+                    className="flex min-h-[100px] w-full rounded-lg border border-slate-200 bg-slate-50/50 p-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-white transition-all text-right"
+                    dir="rtl"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="notes" className="font-semibold text-slate-700 text-sm">ملاحظات إدارية / أكاديمية</Label>
-                  <Input id="notes" {...register('notes')} placeholder="أي ملاحظات تخص مستوى الطالب" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                  <Label htmlFor="notes" className="font-bold text-slate-700 text-sm">ملاحظات إدارية وأكاديمية هامة</Label>
+                  <textarea
+                    id="notes"
+                    {...register('notes')}
+                    placeholder="أدخل أي ملاحظات هامة أو تقييم أولي لمستوى الطالب التعليمي..."
+                    className="flex min-h-[100px] w-full rounded-lg border border-slate-200 bg-slate-50/50 p-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-white transition-all text-right"
+                    dir="rtl"
+                  />
                 </div>
               </div>
             </div>
@@ -962,7 +1001,7 @@ const StudentFormDialog = ({
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
               <div>
                 <p className="font-bold mb-1 text-sm">شحن الرصيد المالي وتسجيل السداد</p>
-                <p>هذا القسم اختياري. يمكنك تسجيل دفعة أولى أو شحن رصيد الطالب المالي فوراً، مع تحديد طريقة السداد والرسوم الشهرية.</p>
+                <p>هذا القسم اختياري. يتم حساب المبلغ المطلوب تلقائياً بناءً على حزمة الحصص المسجلة، مع إمكانية التعديل وتفعيل نظام الأقساط.</p>
               </div>
             </div>
 
@@ -985,7 +1024,10 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="initialPaidAmount" className="font-bold text-slate-700 text-sm">مبلغ الدفعة الأولى المستلمة (KWD)</Label>
+                  <Label htmlFor="initialPaidAmount" className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                    <Coins className="h-4 w-4 text-emerald-600" />
+                    <span>مبلغ الدفعة الأولى المستلمة (KWD) <span className="text-muted-foreground font-normal text-xs">(مستحسن تلقائي: {calculatedTotalAmount} KWD)</span></span>
+                  </Label>
                   <Input
                     id="initialPaidAmount"
                     type="number"
@@ -997,18 +1039,74 @@ const StudentFormDialog = ({
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="paymentMethod" className="font-bold text-slate-700 text-sm">طريقة الدفع للمبلغ المستلم</Label>
-                <select
-                  id="paymentMethod"
-                  {...register('paymentMethod')}
-                  className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="CASH">نقداً (Cash)</option>
-                  <option value="KNET">كي نت (K-Net)</option>
-                  <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
-                </select>
+              {/* Conditionally reveal Price Override explanation input if calculated value deviates */}
+              {watchInitialPaidAmount !== calculatedTotalAmount && calculatedTotalAmount > 0 && (
+                <div className="space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-200 animate-in slide-in-from-top-2">
+                  <Label htmlFor="overrideReason" className="font-bold text-amber-900 text-sm">سبب تعديل السعر / الخصم المستهدف <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="overrideReason"
+                    value={priceOverrideReason}
+                    onChange={(e) => setPriceOverrideReason(e.target.value)}
+                    required
+                    placeholder="يرجى كتابة سبب التعديل (مثال: خصم الأشقاء، منحة تفوق، عرض مؤقت)..."
+                    className="bg-white border-amber-300 h-11 text-sm rounded-lg text-slate-800"
+                  />
+                </div>
+              )}
+
+              {/* Installment selection dropdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="isInstallment" className="font-bold text-slate-700 text-sm">نظام سداد الدفعات</Label>
+                  <select
+                    id="isInstallment"
+                    value={isInstallment}
+                    onChange={(e) => setIsInstallment(e.target.value)}
+                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="no">دفع كامل المبلغ (Fully Paid)</option>
+                    <option value="yes">تقسيط المبلغ على دفعات (Installments)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod" className="font-bold text-slate-700 text-sm">طريقة الدفع المستعملة</Label>
+                  <select
+                    id="paymentMethod"
+                    {...register('paymentMethod')}
+                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="CASH">نقداً (Cash)</option>
+                    <option value="KNET">كي نت (K-Net)</option>
+                    <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Installments specific parameters */}
+              {isInstallment === 'yes' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/80 p-5 rounded-2xl border border-slate-100 shadow-inner animate-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="installmentsCount" className="font-bold text-slate-700 text-sm">عدد دفعات التقسيط المستهدفة</Label>
+                    <Input
+                      id="installmentsCount"
+                      type="number"
+                      min="2"
+                      max="12"
+                      value={installmentsCount}
+                      onChange={(e) => setInstallmentsCount(parseInt(e.target.value, 10) || 2)}
+                      className="bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-slate-700 text-sm">قيمة كل دفعة مستحقة تلقائياً (KWD)</Label>
+                    <div className="bg-white border border-slate-200 px-4 h-11 rounded-lg flex items-center justify-start text-base font-black text-primary">
+                      {installmentValue} KWD
+                    </div>
+                    <p className="text-[10px] text-slate-400">محسوبة بناءً على تقسيم {watchInitialPaidAmount} KWD على {installmentsCount} دفعات.</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between items-center pt-6 border-t mx-4 pb-4">

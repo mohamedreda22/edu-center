@@ -17,12 +17,15 @@ import {
   Clock,
   Percent,
   Car,
-  Award
+  Award,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { studentSchema } from '../validations/studentSchema';
 import { teacherApi } from '../../teachers/services/teacherApi';
+import { courseApi } from '../../courses/services/courseApi';
 
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { kuwaitGeodata } from '@/shared/constants/kuwaitGeodata';
@@ -79,6 +82,9 @@ const StudentFormDialog = ({
 }) => {
   const [activeTab, setActiveTab] = useState('personal');
   const [percentagePreset, setPercentagePreset] = useState('75');
+
+  // Dynamic schedule list containing day elements [{ id, day, from, to }]
+  const [scheduleDays, setScheduleDays] = useState([{ id: 1, day: '', from: '', to: '' }]);
 
   const {
     register,
@@ -141,6 +147,7 @@ const StudentFormDialog = ({
   const unifiedPhoneWatch = watch('unifiedPhone');
   const selectedTeacherId = watch('teacherId');
   const watchCustomPercentage = watch('teacherPercentageSnapshot');
+  const selectedSubject = watch('subject');
 
   // Load teachers for the academic assignment section
   const { data: teachersRes } = useQuery({
@@ -149,8 +156,75 @@ const StudentFormDialog = ({
     enabled: open,
   });
 
+  // Load system courses to populate the subjects dropdown dynamically
+  const { data: coursesRes } = useQuery({
+    queryKey: ['courses-all'],
+    queryFn: () => courseApi.getAll(),
+    enabled: open,
+  });
+
   const teachers = teachersRes?.data || [];
+  const courses = coursesRes?.data || [];
   const selectedTeacherObj = teachers.find(t => t._id === selectedTeacherId);
+
+  // Dynamic sorting: place teachers who teach the selected subject at the very top
+  const sortedTeachers = React.useMemo(() => {
+    if (!selectedSubject) return teachers;
+    return [...teachers].sort((a, b) => {
+      const aTeaches = a.subjects?.some(sub => sub.toLowerCase().includes(selectedSubject.toLowerCase())) ? 1 : 0;
+      const bTeaches = b.subjects?.some(sub => sub.toLowerCase().includes(selectedSubject.toLowerCase())) ? 1 : 0;
+      return bTeaches - aTeaches; // Descending (1 first)
+    });
+  }, [teachers, selectedSubject]);
+
+  // Handle preset change to sync into react-hook-form value
+  useEffect(() => {
+    if (percentagePreset !== 'custom') {
+      setValue('teacherPercentageSnapshot', parseInt(percentagePreset, 10));
+    }
+  }, [percentagePreset, setValue]);
+
+  // Keep react-hook-form schedule timings synced when the dynamic schedule days array is modified
+  useEffect(() => {
+    if (scheduleDays[0]) {
+      setValue('day1', scheduleDays[0].day);
+      setValue('from1', scheduleDays[0].from);
+      setValue('to1', scheduleDays[0].to);
+    } else {
+      setValue('day1', '');
+      setValue('from1', '');
+      setValue('to1', '');
+    }
+    if (scheduleDays[1]) {
+      setValue('day2', scheduleDays[1].day);
+      setValue('from2', scheduleDays[1].from);
+      setValue('to2', scheduleDays[1].to);
+    } else {
+      setValue('day2', '');
+      setValue('from2', '');
+      setValue('to2', '');
+    }
+  }, [scheduleDays, setValue]);
+
+  // Auto-propagate teacher defaults (car, percentage, rate) when selected teacher changes
+  useEffect(() => {
+    if (selectedTeacherObj) {
+      // Set teacher owns car toggle
+      setValue('teacherOwnsCar', selectedTeacherObj.ownsCar ? 'yes' : 'no');
+
+      // Set default snapshots
+      const pct = selectedTeacherObj.teacherPercentage ? Math.round(selectedTeacherObj.teacherPercentage * 100) : 70;
+      setValue('teacherPercentageSnapshot', pct);
+      if (pct === 75 || pct === 80) {
+        setPercentagePreset(String(pct));
+      } else {
+        setPercentagePreset('custom');
+      }
+
+      const rate = selectedTeacherObj.hourlyRate ? (selectedTeacherObj.hourlyRate / 1000) : 10;
+      setValue('pricePerHour', rate);
+    }
+  }, [selectedTeacherObj, setValue]);
 
   // Automatically propagate unified phone number to subfields to respect API/DB schemas
   useEffect(() => {
@@ -160,13 +234,6 @@ const StudentFormDialog = ({
       setValue('whatsapp', unifiedPhoneWatch);
     }
   }, [unifiedPhoneWatch, setValue]);
-
-  // Handle preset change to sync into react-hook-form value
-  useEffect(() => {
-    if (percentagePreset !== 'custom') {
-      setValue('teacherPercentageSnapshot', parseInt(percentagePreset, 10));
-    }
-  }, [percentagePreset, setValue]);
 
   // Handle grade change to auto-set first available classYear
   useEffect(() => {
@@ -243,19 +310,26 @@ const StudentFormDialog = ({
         studentSpecialization: '',
       });
       setPercentagePreset('75');
+      setScheduleDays([{ id: 1, day: '', from: '', to: '' }]);
       setActiveTab('personal');
     }
   }, [open, reset, initialData]);
 
-  // Show a comprehensive validation error alert box if submission is attempted with errors
-  useEffect(() => {
-    const errorKeys = Object.keys(errors);
-    if (errorKeys.length > 0) {
-      toast.error(`هناك أخطاء في النموذج: ${errorKeys.map(k => errors[k]?.message).filter(Boolean).join(', ')}`, {
-        duration: 5000,
-      });
+  const addScheduleRow = () => {
+    if (scheduleDays.length >= 3) {
+      toast.warning('يمكنك إضافة ٣ مواعيد بحد أقصى في نفس الوقت.');
+      return;
     }
-  }, [errors]);
+    setScheduleDays(prev => [...prev, { id: Date.now(), day: '', from: '', to: '' }]);
+  };
+
+  const removeScheduleRow = (id) => {
+    setScheduleDays(prev => prev.filter(row => row.id !== id));
+  };
+
+  const updateScheduleRow = (rowId, key, value) => {
+    setScheduleDays(prev => prev.map(row => row.id === rowId ? { ...row, [key]: value } : row));
+  };
 
   const onFormSubmit = (data) => {
     // Sanitize optional registrations / payments values
@@ -516,7 +590,7 @@ const StudentFormDialog = ({
                 <div className="space-y-2">
                   <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
                     <Award className="h-4 w-4 text-primary shrink-0" />
-                    <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
+                    <span>التخصص الدراسي للطابة (علمي / أدبي)</span>
                   </Label>
                   <Input
                     id="studentSpecialization"
@@ -654,7 +728,28 @@ const StudentFormDialog = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="subject" className="font-bold text-slate-700 text-sm">المادة الدراسية المراد حجزها <span className="text-red-500">*</span></Label>
-                  <Input id="subject" {...register('subject')} placeholder="مثال: لغة إنجليزية، رياضيات" className="bg-slate-50/50 focus:bg-white font-bold text-slate-900 h-11 text-sm rounded-lg border-slate-200" />
+                  <select
+                    id="subject"
+                    {...register('subject')}
+                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold text-slate-900"
+                  >
+                    <option value="">اختر المادة...</option>
+                    {courses.map((c) => (
+                      <option key={c._id} value={c.name}>
+                        {c.name} ({c.code || 'عام'})
+                      </option>
+                    ))}
+                    {/* Fallbacks if courses are empty */}
+                    {courses.length === 0 && (
+                      <>
+                        <option value="لغة عربية">لغة عربية</option>
+                        <option value="لغة إنجليزية">لغة إنجليزية</option>
+                        <option value="رياضيات">رياضيات</option>
+                        <option value="فيزياء">فيزياء</option>
+                        <option value="كيمياء">كيمياء</option>
+                      </>
+                    )}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -665,12 +760,13 @@ const StudentFormDialog = ({
                     className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">اختر معلماً من القائمة...</option>
-                    {teachers.map((t) => {
+                    {sortedTeachers.map((t) => {
                       const spec = t.department || 'عام';
                       const subs = t.subjects && t.subjects.length > 0 ? t.subjects.join('، ') : 'غير محدد';
+                      const isRecommended = selectedSubject && t.subjects?.some(sub => sub.toLowerCase().includes(selectedSubject.toLowerCase()));
                       return (
                         <option key={t._id} value={t._id}>
-                          {t.userId?.firstName} {t.userId?.lastName} ({spec} | المواد: {subs}) {t.usesInstituteCar ? '🚗' : ''}
+                          {isRecommended ? '⭐ [مدرس المادة] ' : ''} {t.userId?.firstName} {t.userId?.lastName} ({spec} | المواد: {subs}) {t.usesInstituteCar ? '🚗' : ''}
                         </option>
                       );
                     })}
@@ -760,73 +856,82 @@ const StudentFormDialog = ({
               </div>
             </div>
 
-            {/* Weekly Schedule Days */}
+            {/* Dynamic, Addable Weekly Schedule Days */}
             <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
-                <Clock className="h-5 w-5" />
-                <span>الجدول الدراسي الأسبوعي المفصل لحجوزات الطالب (الوقت والمواعيد)</span>
-              </h3>
+              <div className="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 text-primary">
+                  <Clock className="h-5 w-5" />
+                  <span>الجدول الدراسي الأسبوعي المفصل لحجوزات الطالب</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={addScheduleRow}
+                  className="bg-primary/10 text-primary hover:bg-primary/20 text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>إضافة يوم إضافي للجدول (اختياري)</span>
+                </button>
+              </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/30 space-y-4 shadow-xs">
-                  <h4 className="font-bold text-xs text-primary flex items-center gap-1.5 border-b pb-2">
-                    <Calendar className="h-4 w-4 shrink-0 text-primary" />
-                    <span>الموعد الأسبوعي الأول (رئيسي)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="day1" className="text-xs text-slate-600 font-bold">اليوم</Label>
-                      <select id="day1" {...register('day1')} className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs">
-                        <option value="">لا يوجد</option>
-                        <option value="Saturday">السبت</option>
-                        <option value="Sunday">الأحد</option>
-                        <option value="Monday">الإثنين</option>
-                        <option value="Tuesday">الثلاثاء</option>
-                        <option value="Wednesday">الأربعاء</option>
-                        <option value="Thursday">الخميس</option>
-                        <option value="Friday">الجمعة</option>
-                      </select>
+              <div className="space-y-4">
+                {scheduleDays.map((row, index) => (
+                  <div key={row.id} className="border border-slate-100 p-5 rounded-xl bg-slate-50/30 space-y-4 shadow-xs relative animate-in slide-in-from-top-2">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <h4 className="font-bold text-xs text-primary flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 shrink-0" />
+                        <span>الموعد الدراسي رقم {index + 1}</span>
+                      </h4>
+                      {scheduleDays.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeScheduleRow(row.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-all"
+                          title="حذف هذا اليوم"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="from1" className="text-xs text-slate-600 font-bold">توقيت البداية (من)</Label>
-                      <Input id="from1" placeholder="14:00" {...register('from1')} className="h-10 text-xs rounded-lg bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="to1" className="text-xs text-slate-600 font-bold">توقيت النهاية (إلى)</Label>
-                      <Input id="to1" placeholder="16:00" {...register('to1')} className="h-10 text-xs rounded-lg bg-white border-slate-200" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-600 font-bold">اليوم</Label>
+                        <select
+                          value={row.day}
+                          onChange={(e) => updateScheduleRow(row.id, 'day', e.target.value)}
+                          className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                        >
+                          <option value="">لا يوجد</option>
+                          <option value="Saturday">السبت</option>
+                          <option value="Sunday">الأحد</option>
+                          <option value="Monday">الإثنين</option>
+                          <option value="Tuesday">الثلاثاء</option>
+                          <option value="Wednesday">الأربعاء</option>
+                          <option value="Thursday">الخميس</option>
+                          <option value="Friday">الجمعة</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-600 font-bold">توقيت البداية (من) (HH:mm)</Label>
+                        <Input
+                          placeholder="14:00"
+                          value={row.from}
+                          onChange={(e) => updateScheduleRow(row.id, 'from', e.target.value)}
+                          className="h-10 text-xs rounded-lg bg-white border-slate-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-slate-600 font-bold">توقيت النهاية (إلى) (HH:mm)</Label>
+                        <Input
+                          placeholder="16:00"
+                          value={row.to}
+                          onChange={(e) => updateScheduleRow(row.id, 'to', e.target.value)}
+                          className="h-10 text-xs rounded-lg bg-white border-slate-200"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="border border-slate-100 p-5 rounded-xl bg-slate-50/30 space-y-4 shadow-xs">
-                  <h4 className="font-bold text-xs text-slate-500 flex items-center gap-1.5 border-b pb-2">
-                    <Calendar className="h-4 w-4 shrink-0" />
-                    <span>الموعد الأسبوعي الثاني (اختياري)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="day2" className="text-xs text-slate-600 font-bold">اليوم</Label>
-                      <select id="day2" {...register('day2')} className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs">
-                        <option value="">لا يوجد</option>
-                        <option value="Saturday">السبت</option>
-                        <option value="Sunday">الأحد</option>
-                        <option value="Monday">الإثنين</option>
-                        <option value="Tuesday">الثلاثاء</option>
-                        <option value="Wednesday">الأربعاء</option>
-                        <option value="Thursday">الخميس</option>
-                        <option value="Friday">الجمعة</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="from2" className="text-xs text-slate-600 font-bold">توقيت البداية (من)</Label>
-                      <Input id="from2" placeholder="14:00" {...register('from2')} className="h-10 text-xs rounded-lg bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="to2" className="text-xs text-slate-600 font-bold">توقيت النهاية (إلى)</Label>
-                      <Input id="to2" placeholder="16:00" {...register('to2')} className="h-10 text-xs rounded-lg bg-white border-slate-200" />
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 

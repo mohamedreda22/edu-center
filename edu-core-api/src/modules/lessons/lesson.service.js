@@ -85,6 +85,20 @@ export const createLesson = async (lessonData, userId) => {
       throw new ConflictError('الطالب لديه حصة أخرى في هذا الوقت');
     }
 
+    // 2.5 Check room conflict
+    if (lessonData.roomId) {
+      const { RoomService } = await import('../rooms/room.service.js');
+      const roomConflict = await RoomService.checkRoomConflict({
+        roomId: lessonData.roomId,
+        lessonDate,
+        startTime,
+        endTime,
+      });
+      if (roomConflict) {
+        throw new ConflictError('الغرفة محجوزة لحصة أخرى في هذا الوقت');
+      }
+    }
+
     // 3. Get teacher for commission split
     const teacher = await teacherRepository.findById(teacherId, session);
     if (!teacher) {

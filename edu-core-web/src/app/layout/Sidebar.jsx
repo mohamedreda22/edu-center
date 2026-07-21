@@ -83,6 +83,13 @@ const menuItems = [
         permission: 'student.view',
       },
       {
+        id: 'guardians-list',
+        label: 'أولياء الأمور',
+        icon: Shield,
+        path: '/guardians',
+        permission: 'student.view',
+      },
+      {
         id: 'crm',
         label: 'إدارة العملاء CRM',
         icon: TrendingUp,
@@ -103,6 +110,13 @@ const menuItems = [
         label: 'الدورات الدراسية',
         icon: BookOpen,
         path: '/courses',
+        permission: 'student.create',
+      },
+      {
+        id: 'rooms',
+        label: 'القاعات والغرف الدراسية',
+        icon: Home,
+        path: '/rooms',
         permission: 'student.create',
       },
       {

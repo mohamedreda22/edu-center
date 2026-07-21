@@ -16,7 +16,8 @@ import {
   FileText,
   Clock,
   Percent,
-  Car
+  Car,
+  Award
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -130,6 +131,8 @@ const StudentFormDialog = ({
       paymentMethod: 'CASH',
       // Additional teacher specific detail overridden at enrollment
       teacherOwnsCar: 'no',
+      // Target student specialization field
+      studentSpecialization: '',
     },
   });
 
@@ -237,6 +240,7 @@ const StudentFormDialog = ({
         initialPaidAmount: 0,
         paymentMethod: 'CASH',
         teacherOwnsCar: 'no',
+        studentSpecialization: '',
       });
       setPercentagePreset('75');
       setActiveTab('personal');
@@ -260,6 +264,11 @@ const StudentFormDialog = ({
     sanitized.parentPhone = data.unifiedPhone;
     sanitized.studentPhone = data.unifiedPhone;
     sanitized.whatsapp = data.unifiedPhone;
+
+    // Push specialization into notes or subjects to avoid DB desync if custom fields don't exist
+    if (data.studentSpecialization) {
+      sanitized.notes = `${data.notes || ''} [التخصص المستهدف: ${data.studentSpecialization}]`.trim();
+    }
 
     if (!sanitized.subject) {
       delete sanitized.subject;
@@ -501,10 +510,23 @@ const StudentFormDialog = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="school" className="font-semibold text-slate-700">المدرسة (اختياري)</Label>
                   <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" className="bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Award className="h-4 w-4 text-primary" />
+                    <span>التخصص الدراسي للطالب</span>
+                  </Label>
+                  <Input
+                    id="studentSpecialization"
+                    {...register('studentSpecialization')}
+                    placeholder="مثال: علمي، أدبي، لغات"
+                    className="bg-white"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -633,24 +655,36 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject" className="font-semibold text-slate-700">المادة الدراسية المراد حجزها</Label>
+                  <Label htmlFor="subject" className="font-semibold text-slate-700">المادة الدراسية المراد حجزها <span className="text-red-500">*</span></Label>
                   <Input id="subject" {...register('subject')} placeholder="مثال: لغة إنجليزية، رياضيات" className="bg-white font-bold text-slate-900" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="teacherId" className="font-semibold text-slate-700">المعلم المخصص للمادة</Label>
+                  <Label htmlFor="teacherId" className="font-semibold text-slate-700">المعلم المخصص للمادة <span className="text-red-500">*</span></Label>
                   <select
                     id="teacherId"
                     {...register('teacherId')}
                     className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="">اختر معلماً...</option>
-                    {teachers.map((t) => (
-                      <option key={t._id} value={t._id}>
-                        {t.userId?.firstName} {t.userId?.lastName} {t.usesInstituteCar ? '🚗' : ''}
-                      </option>
-                    ))}
+                    <option value="">اختر معلماً من القائمة...</option>
+                    {teachers.map((t) => {
+                      const spec = t.department || 'عام';
+                      const subs = t.subjects && t.subjects.length > 0 ? t.subjects.join('، ') : 'غير محدد';
+                      return (
+                        <option key={t._id} value={t._id}>
+                          {t.userId?.firstName} {t.userId?.lastName} ({spec} | المواد: {subs}) {t.usesInstituteCar ? '🚗' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
+                  {selectedTeacherObj && (
+                    <div className="bg-white p-3 rounded-lg border border-slate-200 mt-2 space-y-1.5 text-xs text-slate-700">
+                      <p className="font-bold text-primary">تفاصيل المعلم المختار:</p>
+                      <p>🎓 التخصص الدراسي/القسم: <span className="font-semibold">{selectedTeacherObj.department || 'عام'}</span></p>
+                      <p>📚 المواد المسجلة لتدريسها: <span className="font-semibold">{selectedTeacherObj.subjects?.join('، ') || 'غير محدد'}</span></p>
+                      <p>🚗 مواصلات سيارة المعهد: <span className="font-semibold">{selectedTeacherObj.usesInstituteCar ? 'نعم (يستخدم سيارة الأكاديمية)' : 'لا'}</span></p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -710,13 +744,13 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="purchasedHours" className="font-semibold text-slate-700">عدد الساعات المشتراة للباقة الأولى</Label>
-                  <Input id="purchasedHours" type="number" {...register('purchasedHours')} className="bg-white" />
+                  <Label htmlFor="purchasedHours" className="font-semibold text-slate-700">عدد الساعات المشتراة للباقة الأولى <span className="text-red-500">*</span></Label>
+                  <Input id="purchasedHours" type="number" {...register('purchasedHours')} className="bg-white font-bold" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerHour" className="font-semibold text-slate-700">سعر الساعة المتفق عليه (KWD)</Label>
-                  <Input id="pricePerHour" type="number" step="0.001" {...register('pricePerHour')} className="bg-white" />
+                  <Label htmlFor="pricePerHour" className="font-semibold text-slate-700">سعر الساعة المتفق عليه (KWD) <span className="text-red-500">*</span></Label>
+                  <Input id="pricePerHour" type="number" step="0.001" {...register('pricePerHour')} className="bg-white font-bold" />
                 </div>
               </div>
             </div>
@@ -725,7 +759,7 @@ const StudentFormDialog = ({
             <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>الجدول الدراسي الأسبوعي المفصل لحجوزات الطالب</span>
+                <span>الجدول الدراسي الأسبوعي المفصل لحجوزات الطالب (الوقت والمواعيد)</span>
               </h3>
 
               <div className="border border-slate-200 p-4 rounded-lg bg-white space-y-4">

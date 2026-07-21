@@ -30,7 +30,9 @@ export const PricingService = {
     }
 
     // Sort chronologically by registration/creation date (oldest first)
-    const siblings = await Student.find(filter).sort({ createdAt: 1 }).session(session);
+    const siblings = await Student.find(filter)
+      .sort({ createdAt: 1 })
+      .session(session);
 
     if (siblings.length <= 1) {
       return 0;
@@ -48,7 +50,9 @@ export const PricingService = {
     if (!student.tenantId) {
       return 0;
     }
-    const settings = await TenantSettings.findOne({ tenantId: student.tenantId }).session(session);
+    const settings = await TenantSettings.findOne({
+      tenantId: student.tenantId,
+    }).session(session);
     const strategy = SiblingDiscountResolver.resolveStrategy(settings);
 
     return strategy.calculateDiscount(siblingIndex, settings);
@@ -88,9 +92,17 @@ export const PricingService = {
   /**
    * Calculates student registration package totals
    */
-  calculateRegistrationTotals: async (studentId, pricePerHour, purchasedHours, session = null) => {
+  calculateRegistrationTotals: async (
+    studentId,
+    pricePerHour,
+    purchasedHours,
+    session = null
+  ) => {
     const priceInFils = toFils(pricePerHour);
-    const discountPct = await PricingService.getSiblingDiscountPercentage(studentId, session);
+    const discountPct = await PricingService.getSiblingDiscountPercentage(
+      studentId,
+      session
+    );
     const baseTotal = priceInFils * purchasedHours;
     const discountAmount = Math.round(baseTotal * (discountPct / 100));
     const totalAmount = baseTotal - discountAmount;
@@ -106,7 +118,12 @@ export const PricingService = {
   /**
    * Calculates teacher due for a single student registration (Without dynamic imports / circular references)
    */
-  calculateRegistrationTeacherDue: async (reg, studentGrade, tenantId, session = null) => {
+  calculateRegistrationTeacherDue: async (
+    reg,
+    studentGrade,
+    tenantId,
+    session = null
+  ) => {
     if (!reg) {
       return 0;
     }

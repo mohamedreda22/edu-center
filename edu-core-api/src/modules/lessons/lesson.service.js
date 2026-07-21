@@ -113,20 +113,26 @@ export const createLesson = async (lessonData, userId) => {
       if (teacherId) matchQuery.teacherId = teacherId;
       if (lessonData.subject) matchQuery.subject = lessonData.subject;
 
-      const reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' })
+      const reg = await StudentRegistration.findOne({
+        ...matchQuery,
+        status: 'ACTIVE',
+      })
         .sort({ registrationDate: -1 })
         .session(session);
 
-      const matchedReg = reg || await StudentRegistration.findOne(matchQuery)
-        .sort({ registrationDate: -1 })
-        .session(session);
+      const matchedReg =
+        reg ||
+        (await StudentRegistration.findOne(matchQuery)
+          .sort({ registrationDate: -1 })
+          .session(session));
 
       if (matchedReg) {
         registrationId = matchedReg._id;
         subject = matchedReg.subject;
       }
     } else {
-      const matchedReg = await StudentRegistration.findById(registrationId).session(session);
+      const matchedReg =
+        await StudentRegistration.findById(registrationId).session(session);
       if (matchedReg) {
         subject = matchedReg.subject;
       }
@@ -252,13 +258,18 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
       if (lesson.teacherId) matchQuery.teacherId = lesson.teacherId;
       if (lesson.subject) matchQuery.subject = lesson.subject;
 
-      const reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' })
+      const reg = await StudentRegistration.findOne({
+        ...matchQuery,
+        status: 'ACTIVE',
+      })
         .sort({ registrationDate: -1 })
         .session(session);
 
-      const matchedReg = reg || await StudentRegistration.findOne(matchQuery)
-        .sort({ registrationDate: -1 })
-        .session(session);
+      const matchedReg =
+        reg ||
+        (await StudentRegistration.findOne(matchQuery)
+          .sort({ registrationDate: -1 })
+          .session(session));
 
       if (matchedReg) {
         lesson.registrationId = matchedReg._id;
@@ -277,20 +288,26 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
     if (status === 'COMPLETED') {
       let targetReg = null;
       if (lesson.registrationId) {
-        targetReg = await StudentRegistration.findById(lesson.registrationId).session(session);
+        targetReg = await StudentRegistration.findById(
+          lesson.registrationId
+        ).session(session);
       }
 
       if (!targetReg) {
         targetReg = await StudentRegistration.findOne({
           studentId: lesson.studentId,
           status: 'ACTIVE',
-        }).sort({ registrationDate: 1 }).session(session);
+        })
+          .sort({ registrationDate: 1 })
+          .session(session);
       }
 
       if (!targetReg) {
         targetReg = await StudentRegistration.findOne({
           studentId: lesson.studentId,
-        }).sort({ registrationDate: -1 }).session(session);
+        })
+          .sort({ registrationDate: -1 })
+          .session(session);
       }
 
       if (targetReg) {
@@ -329,7 +346,9 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
 
       if (existingTx) {
         const regId = existingTx.registrationId;
-        await HourTransaction.deleteOne({ _id: existingTx._id }).session(session);
+        await HourTransaction.deleteOne({ _id: existingTx._id }).session(
+          session
+        );
         await HourLedgerService.updateRegistrationStatus(regId, session);
       }
 

@@ -31,7 +31,11 @@ export const studentSchema = z.object({
     .default(0),
 
   // Unified unifiedPhone field used on Frontend
-  unifiedPhone: z.string().regex(/^[0-9+]{8,15}$/, 'رقم الهاتف الموحد غير صالح').optional().or(z.literal('')),
+  unifiedPhone: z
+    .string()
+    .regex(/^[0-9+]{8,15}$/, 'رقم الهاتف الموحد غير صالح')
+    .optional()
+    .or(z.literal('')),
 
   // Registration options
   subject: z.string().optional().or(z.literal('')),
@@ -51,26 +55,34 @@ export const studentSchema = z.object({
   paymentMethod: z.string().optional().or(z.literal('')),
   priceOverrideReason: z.string().optional().or(z.literal('')),
   isInstallment: z.string().optional().or(z.literal('')),
-  installments: z.array(z.object({
-    amount: z.coerce.number().min(0).optional(),
-    dueDate: z.string().optional().or(z.literal('')),
-  })).optional(),
+  installments: z
+    .array(
+      z.object({
+        amount: z.coerce.number().min(0).optional(),
+        dueDate: z.string().optional().or(z.literal('')),
+      })
+    )
+    .optional(),
 
   // Academic registrations array list
-  academicRegistrations: z.array(z.object({
-    subject: z.string().optional().or(z.literal('')),
-    purchasedHours: z.coerce.number().min(0).optional(),
-    pricePerHour: z.coerce.number().min(0).optional(),
-    teacherPercentageSnapshot: z.coerce.number().min(0).max(100).optional(),
-    teacherId: z.string().nullable().optional().or(z.literal('')),
-    day1: z.string().nullable().optional().or(z.literal('')),
-    from1: z.string().nullable().optional().or(z.literal('')),
-    to1: z.string().nullable().optional().or(z.literal('')),
-    day2: z.string().nullable().optional().or(z.literal('')),
-    from2: z.string().nullable().optional().or(z.literal('')),
-    to2: z.string().nullable().optional().or(z.literal('')),
-    day3: z.string().nullable().optional().or(z.literal('')),
-    from3: z.string().nullable().optional().or(z.literal('')),
-    to3: z.string().nullable().optional().or(z.literal('')),
-  })).optional(),
+  academicRegistrations: z
+    .array(
+      z.object({
+        subject: z.string().optional().or(z.literal('')),
+        purchasedHours: z.coerce.number().min(0).optional(),
+        pricePerHour: z.coerce.number().min(0).optional(),
+        teacherPercentageSnapshot: z.coerce.number().min(0).max(100).optional(),
+        teacherId: z.string().nullable().optional().or(z.literal('')),
+        day1: z.string().nullable().optional().or(z.literal('')),
+        from1: z.string().nullable().optional().or(z.literal('')),
+        to1: z.string().nullable().optional().or(z.literal('')),
+        day2: z.string().nullable().optional().or(z.literal('')),
+        from2: z.string().nullable().optional().or(z.literal('')),
+        to2: z.string().nullable().optional().or(z.literal('')),
+        day3: z.string().nullable().optional().or(z.literal('')),
+        from3: z.string().nullable().optional().or(z.literal('')),
+        to3: z.string().nullable().optional().or(z.literal('')),
+      })
+    )
+    .optional(),
 });

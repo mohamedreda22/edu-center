@@ -105,14 +105,22 @@ const checkAndBlockIfLocked = async (payrollRecordId) => {
     const PayrollRecord = mongoose.model('PayrollRecord');
     const pr = await PayrollRecord.findById(payrollRecordId);
     if (pr && ['PENDING_APPROVAL', 'APPROVED', 'PAID'].includes(pr.status)) {
-      throw new Error('لا يمكن تعديل أو حذف حصة مغلقة ومدرجة في كشف الرواتب المعتمد');
+      throw new Error(
+        'لا يمكن تعديل أو حذف حصة مغلقة ومدرجة في كشف الرواتب المعتمد'
+      );
     }
   }
 };
 
 // Lesson Immutability Lock Pre-Save Guard
 lessonSchema.pre('save', async function (next) {
-  if (!this.isNew && (this.isModified('status') || this.isModified('lessonPrice') || this.isModified('durationHours') || this.isModified('lessonDate'))) {
+  if (
+    !this.isNew &&
+    (this.isModified('status') ||
+      this.isModified('lessonPrice') ||
+      this.isModified('durationHours') ||
+      this.isModified('lessonDate'))
+  ) {
     try {
       await checkAndBlockIfLocked(this.payrollRecordId);
     } catch (err) {

@@ -18,7 +18,9 @@ export const GuardianService = {
    * Get all guardians
    */
   getGuardians: async (filter = {}) => {
-    return Guardian.find(filter).populate('students').sort({ lastName: 1, firstName: 1 });
+    return Guardian.find(filter)
+      .populate('students')
+      .sort({ lastName: 1, firstName: 1 });
   },
 
   /**
@@ -42,13 +44,19 @@ export const GuardianService = {
     }
 
     if (data.phone && data.phone !== guardian.phone) {
-      const exists = await Guardian.findOne({ phone: data.phone, _id: { $ne: id } });
+      const exists = await Guardian.findOne({
+        phone: data.phone,
+        _id: { $ne: id },
+      });
       if (exists) {
         throw new AppError('رقم الهاتف مسجل لولي أمر آخر بالفعل', 400);
       }
     }
 
-    return Guardian.findByIdAndUpdate(id, data, { new: true, runValidators: true }).populate('students');
+    return Guardian.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    }).populate('students');
   },
 
   /**
@@ -103,7 +111,9 @@ export const GuardianService = {
 
     if (!guardian) {
       // Split parent name into first and last name safely
-      const nameParts = student.parentName ? student.parentName.trim().split(/\s+/) : ['ولي', 'أمر'];
+      const nameParts = student.parentName
+        ? student.parentName.trim().split(/\s+/)
+        : ['ولي', 'أمر'];
       const firstName = nameParts[0] || 'ولي';
       const lastName = nameParts.slice(1).join(' ') || 'أمر';
 

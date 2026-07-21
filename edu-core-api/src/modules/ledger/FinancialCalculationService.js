@@ -75,12 +75,19 @@ export const FinancialCalculationService = {
     let stageHourlyRate = teacher.hourlyRate || 0; // Default fallback
     let teacherPercentage = null;
 
-    const StudentRegistration = (await import('../students/registration.model.js')).default;
+    const StudentRegistration = (
+      await import('../students/registration.model.js')
+    ).default;
     let reg = null;
 
     // Safe execution to prevent blocking in mock-based unit tests
-    const isDbConnected = mongoose.connection && mongoose.connection.readyState === 1;
-    const isMocked = StudentRegistration && StudentRegistration.findOne && (StudentRegistration.findOne.mock || StudentRegistration.findOne._isMockFunction);
+    const isDbConnected =
+      mongoose.connection && mongoose.connection.readyState === 1;
+    const isMocked =
+      StudentRegistration &&
+      StudentRegistration.findOne &&
+      (StudentRegistration.findOne.mock ||
+        StudentRegistration.findOne._isMockFunction);
 
     if (isDbConnected || isMocked) {
       try {
@@ -93,10 +100,15 @@ export const FinancialCalculationService = {
           if (lesson.subject) matchQuery.subject = lesson.subject;
 
           // Attempt to locate an active registration matching the criteria first
-          reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' }).sort({ registrationDate: -1 });
+          reg = await StudentRegistration.findOne({
+            ...matchQuery,
+            status: 'ACTIVE',
+          }).sort({ registrationDate: -1 });
           if (!reg) {
             // Fallback to any registration matching the criteria sorted by date
-            reg = await StudentRegistration.findOne(matchQuery).sort({ registrationDate: -1 });
+            reg = await StudentRegistration.findOne(matchQuery).sort({
+              registrationDate: -1,
+            });
           }
         }
       } catch (err) {
@@ -133,7 +145,10 @@ export const FinancialCalculationService = {
     let teacherPct = 0.75;
     if (hasSnapshot && typeof teacherPercentage === 'number') {
       teacherPct = teacherPercentage / 100;
-    } else if (typeof teacher.teacherPercentage === 'number' && teacher.teacherPercentage > 0) {
+    } else if (
+      typeof teacher.teacherPercentage === 'number' &&
+      teacher.teacherPercentage > 0
+    ) {
       teacherPct = teacher.teacherPercentage; // teacher.teacherPercentage is already stored as a decimal (e.g. 0.85)
     } else {
       const settingsPct = await SettingsService.getTeacherPercentage(tenantId);
@@ -148,7 +163,8 @@ export const FinancialCalculationService = {
       const duration = lesson.durationHours || 1;
       baseEarnings = multiplyFils(stageHourlyRate, duration * teacherPct);
     } else {
-      const price = typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
+      const price =
+        typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
       baseEarnings = multiplyFils(price, teacherPct);
     }
 
@@ -164,11 +180,9 @@ export const FinancialCalculationService = {
       0,
       subtractFils(baseEarnings, transportDeduction)
     );
-    const price = typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
-    const instituteRevenue = subtractFils(
-      price,
-      netTeacherEarnings
-    );
+    const price =
+      typeof lesson.lessonPrice === 'number' ? lesson.lessonPrice : 0;
+    const instituteRevenue = subtractFils(price, netTeacherEarnings);
 
     return {
       teacherEarnings: netTeacherEarnings,

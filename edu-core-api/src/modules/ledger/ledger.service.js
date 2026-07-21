@@ -81,7 +81,9 @@ export const createTransaction = async (txnData, performedBy) => {
 
       // 2. Recalculate Teacher metrics
       if (txnData.teacherId) {
-        const teacher = await Teacher.findById(txnData.teacherId).session(session);
+        const teacher = await Teacher.findById(txnData.teacherId).session(
+          session
+        );
         if (teacher) {
           await calculateTeacherMetrics(teacher);
         }

@@ -58,7 +58,10 @@ export const getGuardianById = asyncHandler(async (req, res) => {
  * @access  Private (Admin, Receptionist)
  */
 export const updateGuardian = asyncHandler(async (req, res) => {
-  const guardian = await GuardianService.updateGuardian(req.params.id, req.body);
+  const guardian = await GuardianService.updateGuardian(
+    req.params.id,
+    req.body
+  );
 
   // Log in Audit Trail
   await logAuditTrail(req, {
@@ -104,7 +107,10 @@ export const deleteGuardian = asyncHandler(async (req, res) => {
  */
 export const linkStudent = asyncHandler(async (req, res) => {
   const { studentId } = req.body;
-  const guardian = await GuardianService.linkStudentToGuardian(req.params.id, studentId);
+  const guardian = await GuardianService.linkStudentToGuardian(
+    req.params.id,
+    studentId
+  );
 
   res.status(200).json({
     success: true,

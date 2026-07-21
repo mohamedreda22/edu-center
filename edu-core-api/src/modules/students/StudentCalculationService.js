@@ -49,8 +49,14 @@ export const StudentCalculationService = {
     }
 
     // 3. Compute totals directly from registration state (backed by HourTransactions)
-    const totalPurchasedHours = regs.reduce((sum, r) => sum + r.purchasedHours, 0);
-    const totalConsumedHours = regs.reduce((sum, r) => sum + r.consumedHours, 0);
+    const totalPurchasedHours = regs.reduce(
+      (sum, r) => sum + r.purchasedHours,
+      0
+    );
+    const totalConsumedHours = regs.reduce(
+      (sum, r) => sum + r.consumedHours,
+      0
+    );
     const remainingHours = totalPurchasedHours - totalConsumedHours;
 
     // Set primaryRow flag for UI presentation
@@ -64,7 +70,10 @@ export const StudentCalculationService = {
     }
 
     // 4. Financial Outstanding Balance
-    const totalRegistrationsAmount = regs.reduce((sum, r) => sum + r.totalAmount, 0);
+    const totalRegistrationsAmount = regs.reduce(
+      (sum, r) => sum + r.totalAmount,
+      0
+    );
 
     const totalPaidPayments = (
       await Payment.find({ studentId, status: 'PAID' })
@@ -103,7 +112,9 @@ export const StudentCalculationService = {
     }
 
     // Balance Alert:
-    const lowHoursThreshold = await SettingsService.getLowHoursThreshold(student.tenantId);
+    const lowHoursThreshold = await SettingsService.getLowHoursThreshold(
+      student.tenantId
+    );
     let balanceAlert = 'OK';
     if (remainingHours < 0) {
       balanceAlert = 'Hours Exceeded';

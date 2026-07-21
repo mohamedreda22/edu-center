@@ -137,7 +137,10 @@ export const getOverview = asyncHandler(async (req, res) => {
     status: 'COMPLETED',
   }).populate('teacherId');
 
-  const carRecovery = await FinancialCalculationService.calculateCarRecoveryForLessons(completedLessonsThisMonth);
+  const carRecovery =
+    await FinancialCalculationService.calculateCarRecoveryForLessons(
+      completedLessonsThisMonth
+    );
 
   const instituteProfit = monthlyRevenue - monthlyExpenses;
 

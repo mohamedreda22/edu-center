@@ -27,13 +27,13 @@ const hourTransactionSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: [
-        'PURCHASE',       // Sourced from standard billing packages
-        'BONUS',          // Sourced from promotional/compensation gifts
-        'TRANSFER_IN',    // Sourced from transfers from other subjects/siblings
-        'TRANSFER_OUT',   // Sourced from transfers to other subjects/siblings
-        'CONSUMED',       // Deducted upon completion of scheduled lessons
-        'REFUND',         // Sourced from cancellations and package refunds
-        'ADJUSTMENT',     // Sourced from manual administrative corrections
+        'PURCHASE', // Sourced from standard billing packages
+        'BONUS', // Sourced from promotional/compensation gifts
+        'TRANSFER_IN', // Sourced from transfers from other subjects/siblings
+        'TRANSFER_OUT', // Sourced from transfers to other subjects/siblings
+        'CONSUMED', // Deducted upon completion of scheduled lessons
+        'REFUND', // Sourced from cancellations and package refunds
+        'ADJUSTMENT', // Sourced from manual administrative corrections
       ],
       required: true,
       index: true,
@@ -62,6 +62,9 @@ const hourTransactionSchema = new mongoose.Schema(
 hourTransactionSchema.index({ studentId: 1, type: 1 });
 hourTransactionSchema.index({ registrationId: 1, transactionDate: -1 });
 
-const HourTransaction = mongoose.model('HourTransaction', hourTransactionSchema);
+const HourTransaction = mongoose.model(
+  'HourTransaction',
+  hourTransactionSchema
+);
 
 export default HourTransaction;

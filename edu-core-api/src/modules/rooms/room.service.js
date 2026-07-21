@@ -70,7 +70,10 @@ export const RoomService = {
     });
 
     if (hasLessons) {
-      throw new AppError('لا يمكن حذف الغرفة لوجود حصص دراسية مجدولة فيها مستقبلاً', 400);
+      throw new AppError(
+        'لا يمكن حذف الغرفة لوجود حصص دراسية مجدولة فيها مستقبلاً',
+        400
+      );
     }
 
     room.isDeleted = true;
@@ -82,7 +85,13 @@ export const RoomService = {
   /**
    * Dynamic Room Scheduling Conflict Detection with minute-level precision
    */
-  checkRoomConflict: async ({ roomId, lessonDate, startTime, endTime, excludeLessonId = null }) => {
+  checkRoomConflict: async ({
+    roomId,
+    lessonDate,
+    startTime,
+    endTime,
+    excludeLessonId = null,
+  }) => {
     if (!roomId) return null;
 
     const Lesson = (await import('../lessons/lesson.model.js')).default;
@@ -109,7 +118,9 @@ export const RoomService = {
     for (const l of dayLessons) {
       const isOverlap = startTime < l.endTime && endTime > l.startTime;
       if (isOverlap) {
-        logger.warn(`[RoomService] Scheduling conflict found in Room ${roomId} with Lesson ${l._id} (${l.startTime} - ${l.endTime})`);
+        logger.warn(
+          `[RoomService] Scheduling conflict found in Room ${roomId} with Lesson ${l._id} (${l.startTime} - ${l.endTime})`
+        );
         return l; // Return the conflicting lesson
       }
     }

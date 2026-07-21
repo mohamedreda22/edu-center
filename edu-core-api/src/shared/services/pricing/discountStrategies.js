@@ -13,7 +13,9 @@ export class SiblingDiscountStrategy {
    * @returns {number} The discount percentage (0 to 100).
    */
   calculateDiscount(siblingIndex, tenantSettings) {
-    throw new Error('calculateDiscount must be implemented by strategy subclasses');
+    throw new Error(
+      'calculateDiscount must be implemented by strategy subclasses'
+    );
   }
 }
 

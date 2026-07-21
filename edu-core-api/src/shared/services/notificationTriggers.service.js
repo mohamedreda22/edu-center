@@ -29,7 +29,9 @@ const claimDailyJobLock = async (jobName) => {
       );
       return null;
     }
-    logger.error(`[BackgroundJob] Lock claiming error for [${jobName}]: ${err.message}`);
+    logger.error(
+      `[BackgroundJob] Lock claiming error for [${jobName}]: ${err.message}`
+    );
     return null;
   }
 };
@@ -44,7 +46,9 @@ const finalizeJobLock = async (lockDoc, status) => {
     lockDoc.completedAt = new Date();
     await lockDoc.save();
   } catch (err) {
-    logger.error(`[BackgroundJob] Failed to finalize lock for [${lockDoc.jobName}]: ${err.message}`);
+    logger.error(
+      `[BackgroundJob] Failed to finalize lock for [${lockDoc.jobName}]: ${err.message}`
+    );
   }
 };
 

@@ -252,10 +252,40 @@ const StudentDetailsPage = () => {
                 <span className="font-semibold">{student?.siblingGroup}</span>
               </div>
             )}
+            {student?.preferredTeacherGender && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">جنس المعلم المفضل:</span>
+                <span className="font-semibold">{student?.preferredTeacherGender === 'MALE' ? 'ذكر' : 'أنثى'}</span>
+              </div>
+            )}
+            {student?.preferredSchedule && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">المواعيد المفضلة:</span>
+                <span className="font-semibold text-xs">{student?.preferredSchedule}</span>
+              </div>
+            )}
+            {student?.dateOfBirth && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">تاريخ الميلاد:</span>
+                <span className="font-semibold">{new Date(student.dateOfBirth).toLocaleDateString('ar-KW')}</span>
+              </div>
+            )}
+            {student?.enrollmentDate && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">تاريخ تفعيل الملف:</span>
+                <span className="font-semibold">{new Date(student.enrollmentDate).toLocaleDateString('ar-KW')}</span>
+              </div>
+            )}
+            {student?.notes && (
+              <div className="flex flex-col border-b pb-2 gap-1">
+                <span className="text-muted-foreground text-xs">ملاحظات الملف:</span>
+                <span className="font-semibold text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100">{student?.notes}</span>
+              </div>
+            )}
             {student?.address && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">العنوان بالتفصيل:</span>
-                <span className="font-semibold">{student?.address}</span>
+                <span className="font-semibold text-xs">{student?.address}</span>
               </div>
             )}
           </CardContent>

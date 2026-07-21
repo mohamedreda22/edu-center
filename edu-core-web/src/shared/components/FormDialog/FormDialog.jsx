@@ -28,7 +28,7 @@ const FormDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
-        className="w-full h-full max-h-screen sm:h-auto sm:max-h-[90vh] sm:max-w-[480px] rounded-none sm:rounded-3xl border-none shadow-2xl p-0 flex flex-col overflow-hidden"
+        className="w-full h-full max-h-screen sm:h-auto sm:max-h-[90vh] sm:max-w-[480px] rounded-none sm:rounded-3xl border-none shadow-2xl p-0 flex flex-col overflow-hidden data-[state=open]:sm:max-w-[75vw] lg:data-[state=open]:sm:max-w-[75vw]"
         dir="rtl"
       >
         {/* Dynamic top bar decoration */}

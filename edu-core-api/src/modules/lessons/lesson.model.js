@@ -14,6 +14,11 @@ const lessonSchema = new mongoose.Schema(
       ref: 'Teacher',
       required: [true, 'يجب تحديد المعلم'],
     },
+    roomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Room',
+      default: null,
+    },
     registrationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'StudentRegistration',
@@ -88,6 +93,7 @@ const lessonSchema = new mongoose.Schema(
 // Indexes for conflict detection and reports
 lessonSchema.index({ teacherId: 1, lessonDate: 1 });
 lessonSchema.index({ studentId: 1, lessonDate: 1 });
+lessonSchema.index({ roomId: 1, lessonDate: 1 });
 lessonSchema.index({ status: 1 });
 lessonSchema.index({ lessonDate: 1 });
 lessonSchema.index({ registrationId: 1 });

@@ -19,6 +19,9 @@ const DashboardPage = lazy(
 const StudentsListPage = lazy(
   () => import('../features/students/pages/StudentsListPage')
 );
+const GuardiansListPage = lazy(
+  () => import('../features/students/pages/GuardiansListPage')
+);
 const StudentDetailsPage = lazy(
   () => import('../features/students/pages/StudentDetailsPage')
 );
@@ -45,6 +48,9 @@ const TeacherSettlementPage = lazy(
 );
 const SchedulePage = lazy(
   () => import('../features/scheduling/pages/SchedulePage')
+);
+const RoomsListPage = lazy(
+  () => import('../features/scheduling/pages/RoomsListPage')
 );
 const TransactionsListPage = lazy(
   () => import('../features/payments/pages/TransactionsListPage')
@@ -130,6 +136,38 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/guardians',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Guardians...
+                    </div>
+                  }
+                >
+                  <GuardiansListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/rooms',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Rooms...
+                    </div>
+                  }
+                >
+                  <RoomsListPage />
                 </Suspense>
               </ProtectedRoute>
             ),

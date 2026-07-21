@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { studentApi } from '@/features/students/services/studentApi';
 import { teacherApi } from '@/features/teachers/services/teacherApi';
+import { roomApi } from '../services/roomApi';
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -22,6 +23,7 @@ const lessonSchema = z.object({
     .string()
     .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'تنسيق الوقت غير صالح'),
   lessonPrice: z.coerce.number().min(0, 'السعر يجب أن يكون 0 أو أكثر'),
+  roomId: z.string().optional(),
 });
 
 const LessonFormDialog = ({
@@ -52,6 +54,10 @@ const LessonFormDialog = ({
   const { data: students } = useQuery({
     queryKey: ['students'],
     queryFn: () => studentApi.getAllStudents({ limit: 100 }),
+  });
+  const { data: rooms } = useQuery({
+    queryKey: ['rooms-list'],
+    queryFn: () => roomApi.getAllRooms(),
   });
 
   React.useEffect(() => {
@@ -144,14 +150,31 @@ const LessonFormDialog = ({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="lessonPrice">سعر الحصة (KD)</Label>
-          <Input
-            id="lessonPrice"
-            type="number"
-            step="0.001"
-            {...register('lessonPrice')}
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="roomId">القاعة الدراسية (غرفة مادية)</Label>
+            <select
+              id="roomId"
+              {...register('roomId')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">تحديد القاعة الدراسية...</option>
+              {rooms?.data?.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.name} (السعة: {r.capacity})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lessonPrice">سعر الحصة (KD)</Label>
+            <Input
+              id="lessonPrice"
+              type="number"
+              step="0.001"
+              {...register('lessonPrice')}
+            />
+          </div>
         </div>
       </form>
     </FormDialog>

@@ -20,6 +20,10 @@ export const createStudent = async (studentData) => {
       },
       session
     );
+
+    const { GuardianService } = await import('../guardians/guardian.service.js');
+    await GuardianService.syncStudentWithGuardian(student);
+
     return student;
   });
 };
@@ -87,6 +91,10 @@ export const updateStudent = async (id, updateData) => {
   if (!student) {
     throw new NotFoundError('الطالب غير موجود');
   }
+
+  const { GuardianService } = await import('../guardians/guardian.service.js');
+  await GuardianService.syncStudentWithGuardian(student);
+
   return student;
 };
 

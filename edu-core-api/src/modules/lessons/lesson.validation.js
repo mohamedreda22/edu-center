@@ -22,6 +22,11 @@ export const lessonSchema = z.object({
   notes: z.string().optional(),
   registrationId: z.string().optional(),
   subject: z.string().optional(),
+  roomId: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
 });
 
 export const updateStatusSchema = z.object({

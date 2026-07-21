@@ -15,11 +15,18 @@ import { recalculateStudentBalances } from '../students/studentBalance.service.j
 /**
  * Recomputes and heals all FIFO payment allocations for a student
  */
-export const reallocateAllStudentPayments = async (studentId, session = null) => {
+export const reallocateAllStudentPayments = async (
+  studentId,
+  session = null
+) => {
   const options = session ? { session } : {};
 
   // 1. Reset all registration paidAmounts to 0
-  await StudentRegistration.updateMany({ studentId }, { $set: { paidAmount: 0 } }, options);
+  await StudentRegistration.updateMany(
+    { studentId },
+    { $set: { paidAmount: 0 } },
+    options
+  );
 
   // 2. Delete all existing allocations for this student
   await PaymentAllocation.deleteMany({ studentId }, options);
@@ -159,9 +166,12 @@ export const getAllPayments = async (query = {}) => {
   ]);
 
   // Enrich payments with their chronological allocations down to registrations
-  const PaymentAllocation = (await import('./paymentAllocation.model.js')).default;
+  const PaymentAllocation = (await import('./paymentAllocation.model.js'))
+    .default;
   const paymentIds = payments.map((p) => p._id);
-  const allocations = await PaymentAllocation.find({ paymentId: { $in: paymentIds } })
+  const allocations = await PaymentAllocation.find({
+    paymentId: { $in: paymentIds },
+  })
     .populate('registrationId', 'subject totalAmount')
     .sort({ createdAt: 1 });
 

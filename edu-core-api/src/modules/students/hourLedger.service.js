@@ -13,7 +13,10 @@ export const HourLedgerService = {
     const [entry] = await HourTransaction.create([data], options);
 
     // Dynamic reactive status synchronization
-    await HourLedgerService.updateRegistrationStatus(data.registrationId, session);
+    await HourLedgerService.updateRegistrationStatus(
+      data.registrationId,
+      session
+    );
 
     return entry;
   },
@@ -24,7 +27,8 @@ export const HourLedgerService = {
   updateRegistrationStatus: async (registrationId, session = null) => {
     const options = session ? { session } : {};
 
-    const reg = await StudentRegistration.findById(registrationId).session(session);
+    const reg =
+      await StudentRegistration.findById(registrationId).session(session);
     if (!reg) {
       throw new NotFoundError('عقد الاشتراك غير موجود');
     }

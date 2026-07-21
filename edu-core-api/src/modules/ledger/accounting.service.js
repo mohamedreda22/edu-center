@@ -41,7 +41,8 @@ const STANDARD_ACCOUNTS = [
     accountNumber: '4020',
     name: 'مردودات الرسوم والدفعات (Tuition Returns & Refunds)',
     type: 'REVENUE',
-    description: 'المبالغ المستردة للطلاب مقابل الساعات الملغاة أو تعديل الباقات',
+    description:
+      'المبالغ المستردة للطلاب مقابل الساعات الملغاة أو تعديل الباقات',
   },
   {
     accountNumber: '4030',
@@ -377,7 +378,8 @@ export const AccountingService = {
     const accountsReceivable = getBalances('1210');
     const salaryPayable = getBalances('2010');
 
-    const totalAssets = cashOnHand.net + cashAtBank.net + accountsReceivable.net;
+    const totalAssets =
+      cashOnHand.net + cashAtBank.net + accountsReceivable.net;
     const totalLiabilities = salaryPayable.net;
     const equity = totalAssets - totalLiabilities; // Assets = Liabilities + Equity
 

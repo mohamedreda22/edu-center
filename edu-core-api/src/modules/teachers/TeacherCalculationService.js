@@ -4,5 +4,6 @@ export const TeacherCalculationService = {
   /**
    * Calculates teacher due for a single student registration
    */
-  calculateRegistrationTeacherDue: PricingService.calculateRegistrationTeacherDue,
+  calculateRegistrationTeacherDue:
+    PricingService.calculateRegistrationTeacherDue,
 };

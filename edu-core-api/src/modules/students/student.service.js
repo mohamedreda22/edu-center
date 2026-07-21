@@ -21,7 +21,8 @@ export const createStudent = async (studentData) => {
       session
     );
 
-    const { GuardianService } = await import('../guardians/guardian.service.js');
+    const { GuardianService } =
+      await import('../guardians/guardian.service.js');
     await GuardianService.syncStudentWithGuardian(student);
 
     return student;

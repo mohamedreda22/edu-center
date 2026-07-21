@@ -20,13 +20,23 @@ router.post(
 
 router.get(
   '/',
-  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST, UserRole.TEACHER),
+  authorize(
+    UserRole.ADMIN,
+    UserRole.ACCOUNTANT,
+    UserRole.RECEPTIONIST,
+    UserRole.TEACHER
+  ),
   roomController.getRooms
 );
 
 router.get(
   '/:id',
-  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST, UserRole.TEACHER),
+  authorize(
+    UserRole.ADMIN,
+    UserRole.ACCOUNTANT,
+    UserRole.RECEPTIONIST,
+    UserRole.TEACHER
+  ),
   roomController.getRoomById
 );
 
@@ -37,10 +47,6 @@ router.put(
   roomController.updateRoom
 );
 
-router.delete(
-  '/:id',
-  authorize(UserRole.ADMIN),
-  roomController.deleteRoom
-);
+router.delete('/:id', authorize(UserRole.ADMIN), roomController.deleteRoom);
 
 export default router;

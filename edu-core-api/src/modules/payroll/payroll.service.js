@@ -76,7 +76,11 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
     }
 
     // Preserve existing record's bonuses and penalties to prevent recalculations from wiping adjustments
-    const existingRecord = await PayrollRecord.findOne({ teacherId, month, year }).session(session);
+    const existingRecord = await PayrollRecord.findOne({
+      teacherId,
+      month,
+      year,
+    }).session(session);
     const bonuses = existingRecord ? existingRecord.bonuses : 0;
     const penalties = existingRecord ? existingRecord.penalties : 0;
 
@@ -401,13 +405,15 @@ export const getApprovalDetails = async (id, userRole = null) => {
     .sort({ createdAt: -1 })
     .populate('signatures.userId', 'firstName lastName email');
 
-  const chain = await ApprovalChain.findOne({ workflowType: 'PAYROLL_APPROVAL' });
+  const chain = await ApprovalChain.findOne({
+    workflowType: 'PAYROLL_APPROVAL',
+  });
   const levels = chain ? chain.levels : ['ACCOUNTANT', 'ADMIN'];
 
   let isAuthorizedToSign = false;
   if (request && request.status === 'PENDING') {
     const activeLevelRole = levels[request.currentLevel];
-    isAuthorizedToSign = (userRole === 'ADMIN' || userRole === activeLevelRole);
+    isAuthorizedToSign = userRole === 'ADMIN' || userRole === activeLevelRole;
   }
 
   return {
@@ -436,7 +442,13 @@ export const rejectPayroll = async (id, userId, userRole, rejectReason) => {
     }).session(session);
 
     if (request) {
-      await ApprovalService.rejectRequest(request._id, userId, userRole, rejectReason, session);
+      await ApprovalService.rejectRequest(
+        request._id,
+        userId,
+        userRole,
+        rejectReason,
+        session
+      );
 
       // Reload record to capture updated status (resets back to CALCULATED state on decline)
       const updatedRecord = await PayrollRecord.findById(id).session(session);
@@ -482,14 +494,23 @@ export const updatePayrollAdjustments = async (id, adjustments, userId) => {
     }
 
     if (record.status === 'PAID') {
-      throw new ValidationError('لا يمكن تعديل كشف راتب تم صرفه وتسويته بالفعل');
+      throw new ValidationError(
+        'لا يمكن تعديل كشف راتب تم صرفه وتسويته بالفعل'
+      );
     }
 
     const previousValue = record.toObject();
 
-    const bonuses = typeof adjustments.bonuses === 'number' ? toFils(adjustments.bonuses) : record.bonuses;
-    const penalties = typeof adjustments.penalties === 'number' ? toFils(adjustments.penalties) : record.penalties;
-    const notes = adjustments.notes !== undefined ? adjustments.notes : record.notes;
+    const bonuses =
+      typeof adjustments.bonuses === 'number'
+        ? toFils(adjustments.bonuses)
+        : record.bonuses;
+    const penalties =
+      typeof adjustments.penalties === 'number'
+        ? toFils(adjustments.penalties)
+        : record.penalties;
+    const notes =
+      adjustments.notes !== undefined ? adjustments.notes : record.notes;
 
     // Calculate finalAmount = teacherEarnings + bonuses - transportDeductions - penalties
     const totalEarnings = record.teacherEarnings + bonuses;

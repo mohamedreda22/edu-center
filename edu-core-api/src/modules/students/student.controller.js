@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+
+import HourLedgerService from './hourLedger.service.js';
 import StudentRegistration from './registration.model.js';
 import Student from './student.model.js';
 import * as studentService from './student.service.js';
@@ -8,19 +10,14 @@ import {
   calculateRegistrationTeacherDue,
 } from './studentBalance.service.js';
 import { StudentCalculationService } from './StudentCalculationService.js';
-import { SettingsService } from '../tenants/SettingsService.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { ValidationError } from '../../shared/errors/ValidationError.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
-import { generateCode } from '../../shared/utils/atomicCounter.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import { generateCode } from '../../shared/utils/atomicCounter.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
-import {
-  recordLedgerEntry,
-  removeLedgerEntriesByReference,
-} from '../ledger/ledger.service.js';
-import HourLedgerService from './hourLedger.service.js';
-import HourTransaction from './hourTransaction.model.js';
+import { recordLedgerEntry } from '../ledger/ledger.service.js';
+import { SettingsService } from '../tenants/SettingsService.js';
 
 export const getStudentBalance = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -88,7 +85,8 @@ export const createRegistration = asyncHandler(async (req, res) => {
     );
 
   const tenantId = req.user?.tenantId || null;
-  const teacherPercentageSnapshot = await SettingsService.getTeacherPercentage(tenantId);
+  const teacherPercentageSnapshot =
+    await SettingsService.getTeacherPercentage(tenantId);
 
   // Perform with transaction to ensure ledger and registration are atomic
   const registration = await withTransaction(async (session) => {
@@ -170,20 +168,30 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
   const { id, regId } = req.params;
 
   await withTransaction(async (session) => {
-    const registration = await StudentRegistration.findOne({ _id: regId, studentId: id }).session(session);
+    const registration = await StudentRegistration.findOne({
+      _id: regId,
+      studentId: id,
+    }).session(session);
     if (!registration) {
       throw new NotFoundError('التسجيل غير موجود');
     }
 
     // Prevent deletion/cancellation once financial or study activity exists
     if (registration.consumedHours > 0) {
-      throw new ValidationError('لا يمكن حذف أو إلغاء التسجيل بعد بدء استهلاك الحصص وحضور الطالب');
+      throw new ValidationError(
+        'لا يمكن حذف أو إلغاء التسجيل بعد بدء استهلاك الحصص وحضور الطالب'
+      );
     }
 
     const Lesson = mongoose.model('Lesson');
-    const hasCompletedLessons = await Lesson.exists({ registrationId: regId, status: 'COMPLETED' }).session(session);
+    const hasCompletedLessons = await Lesson.exists({
+      registrationId: regId,
+      status: 'COMPLETED',
+    }).session(session);
     if (hasCompletedLessons) {
-      throw new ValidationError('لا يمكن حذف أو إلغاء التسجيل لوجود حصص مكتملة مرتبطة به');
+      throw new ValidationError(
+        'لا يمكن حذف أو إلغاء التسجيل لوجود حصص مكتملة مرتبطة به'
+      );
     }
 
     // Business cancellation & Soft Delete instead of hard-deleting financial history
@@ -282,8 +290,12 @@ export const createStudent = asyncHandler(async (req, res) => {
   const result = await withTransaction(async (session) => {
     // 1. Create Student
     const studentCode = await generateCode('studentCode', 'STD', session);
-    const convertedMonthlyFee = mongoose.model('Student').schema.path('monthlyFee')
-      ? (monthlyFee !== undefined ? (parseFloat(monthlyFee) * 1000) : 0) // convert to fils (or use helper)
+    const convertedMonthlyFee = mongoose
+      .model('Student')
+      .schema.path('monthlyFee')
+      ? monthlyFee !== undefined
+        ? parseFloat(monthlyFee) * 1000
+        : 0 // convert to fils (or use helper)
       : 0;
 
     const studentData = {
@@ -313,13 +325,13 @@ export const createStudent = asyncHandler(async (req, res) => {
       studentCode,
     };
 
-    const [student] = await mongoose.model('Student').create(
-      [studentData],
-      session ? { session } : {}
-    );
+    const [student] = await mongoose
+      .model('Student')
+      .create([studentData], session ? { session } : {});
 
     // Sync Guardian immediately (since it matches on phone numbers)
-    const { GuardianService } = await import('../guardians/guardian.service.js');
+    const { GuardianService } =
+      await import('../guardians/guardian.service.js');
     await GuardianService.syncStudentWithGuardian(student);
 
     let registration = null;
@@ -346,7 +358,11 @@ export const createStudent = asyncHandler(async (req, res) => {
     const createdRegistrations = [];
 
     for (const academicReg of academicRegistrations) {
-      if (academicReg.subject && academicReg.purchasedHours && academicReg.pricePerHour) {
+      if (
+        academicReg.subject &&
+        academicReg.purchasedHours &&
+        academicReg.pricePerHour
+      ) {
         const { priceInFils, discountPct, discountAmount, totalAmount } =
           await StudentCalculationService.calculateRegistrationTotals(
             student._id,
@@ -356,12 +372,18 @@ export const createStudent = asyncHandler(async (req, res) => {
           );
 
         const tenantId = req.user?.tenantId || null;
-        const defaultPercentage = await SettingsService.getTeacherPercentage(tenantId);
-        const currentPercentageSnapshot = academicReg.teacherPercentageSnapshot !== undefined
-          ? academicReg.teacherPercentageSnapshot
-          : defaultPercentage;
+        const defaultPercentage =
+          await SettingsService.getTeacherPercentage(tenantId);
+        const currentPercentageSnapshot =
+          academicReg.teacherPercentageSnapshot !== undefined
+            ? academicReg.teacherPercentageSnapshot
+            : defaultPercentage;
 
-        const registrationId = await generateCode('registrationId', 'REG', session);
+        const registrationId = await generateCode(
+          'registrationId',
+          'REG',
+          session
+        );
 
         const [reg] = await StudentRegistration.create(
           [
@@ -470,10 +492,14 @@ export const createStudent = asyncHandler(async (req, res) => {
       let remainingPaymentAmount = payment.amount;
 
       for (const reg of createdRegistrations) {
-        if (remainingPaymentAmount <= 0) break;
+        if (remainingPaymentAmount <= 0) {
+          break;
+        }
 
         const needed = reg.totalAmount - (reg.paidAmount || 0);
-        if (needed <= 0) continue;
+        if (needed <= 0) {
+          continue;
+        }
 
         const allocated = Math.min(remainingPaymentAmount, needed);
         if (allocated > 0) {
@@ -509,7 +535,9 @@ export const createStudent = asyncHandler(async (req, res) => {
     action: 'STUDENT_CREATED',
     entityType: 'Student',
     entityId: result.student._id,
-    afterState: result.student.toObject ? result.student.toObject() : result.student,
+    afterState: result.student.toObject
+      ? result.student.toObject()
+      : result.student,
   });
 
   if (result.registration) {

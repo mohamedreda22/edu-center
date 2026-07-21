@@ -50,7 +50,10 @@ export const calculateTeacherMetrics = async (teacher) => {
   // 4. Gross Due (Sum of Teacher Due from Student Registrations) - Optimized to eliminate N+1 query
   const regs = await StudentRegistration.find({ teacherId });
   const studentIds = [...new Set(regs.map((r) => r.studentId).filter(Boolean))];
-  const students = studentIds.length > 0 ? await Student.find({ _id: { $in: studentIds } }) : [];
+  const students =
+    studentIds.length > 0
+      ? await Student.find({ _id: { $in: studentIds } })
+      : [];
   const studentMap = new Map(students.map((s) => [s._id.toString(), s]));
 
   let dueBeforeDeduction = 0;
@@ -67,7 +70,9 @@ export const calculateTeacherMetrics = async (teacher) => {
   // 5. Transportation Deduction (calculated from completed lessons with car) - Unified with SettingsService (Finding A5)
   let transportationDeduction = 0;
   if (teacher.usesInstituteCar) {
-    const rateInFils = await SettingsService.getTransportationDeductionRate(teacher.tenantId);
+    const rateInFils = await SettingsService.getTransportationDeductionRate(
+      teacher.tenantId
+    );
     transportationDeduction = completedLessons.length * rateInFils;
   }
 

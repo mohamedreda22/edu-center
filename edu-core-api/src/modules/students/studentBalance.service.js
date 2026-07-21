@@ -9,14 +9,20 @@ import { TeacherCalculationService } from '../teachers/TeacherCalculationService
 
 export const getSiblingDiscountPercentage = (studentId, session) => {
   if (session !== undefined) {
-    return StudentCalculationService.getSiblingDiscountPercentage(studentId, session);
+    return StudentCalculationService.getSiblingDiscountPercentage(
+      studentId,
+      session
+    );
   }
   return StudentCalculationService.getSiblingDiscountPercentage(studentId);
 };
 
 export const recalculateStudentBalances = (studentId, save) => {
   if (save !== undefined) {
-    return StudentCalculationService.recalculateStudentBalances(studentId, save);
+    return StudentCalculationService.recalculateStudentBalances(
+      studentId,
+      save
+    );
   }
   return StudentCalculationService.recalculateStudentBalances(studentId);
 };
@@ -25,11 +31,25 @@ export const calculateRegistrationWeeklyHours = (reg) => {
   return StudentCalculationService.calculateRegistrationWeeklyHours(reg);
 };
 
-export const calculateRegistrationTeacherDue = (reg, studentGrade, tenantId, session) => {
+export const calculateRegistrationTeacherDue = (
+  reg,
+  studentGrade,
+  tenantId,
+  session
+) => {
   if (session !== undefined) {
-    return TeacherCalculationService.calculateRegistrationTeacherDue(reg, studentGrade, tenantId, session);
+    return TeacherCalculationService.calculateRegistrationTeacherDue(
+      reg,
+      studentGrade,
+      tenantId,
+      session
+    );
   }
-  return TeacherCalculationService.calculateRegistrationTeacherDue(reg, studentGrade, tenantId);
+  return TeacherCalculationService.calculateRegistrationTeacherDue(
+    reg,
+    studentGrade,
+    tenantId
+  );
 };
 
 export const calculateLessonEarnings = (lesson) => {

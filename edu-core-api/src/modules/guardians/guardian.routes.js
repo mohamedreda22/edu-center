@@ -1,7 +1,10 @@
 import express from 'express';
 
 import * as guardianController from './guardian.controller.js';
-import { createGuardianSchema, updateGuardianSchema } from './guardian.validation.js';
+import {
+  createGuardianSchema,
+  updateGuardianSchema,
+} from './guardian.validation.js';
 import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';

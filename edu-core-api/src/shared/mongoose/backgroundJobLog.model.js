@@ -35,7 +35,10 @@ const backgroundJobLogSchema = new mongoose.Schema(
 );
 
 // Unique compound index to guarantee distributed single execution
-backgroundJobLogSchema.index({ jobName: 1, executionDate: 1 }, { unique: true });
+backgroundJobLogSchema.index(
+  { jobName: 1, executionDate: 1 },
+  { unique: true }
+);
 
 const BackgroundJobLog = mongoose.model(
   'BackgroundJobLog',

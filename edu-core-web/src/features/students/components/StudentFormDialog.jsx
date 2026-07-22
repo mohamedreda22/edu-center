@@ -1,7 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import {
   BookOpen,
   CreditCard,
@@ -11,8 +9,6 @@ import {
   Phone,
   MapPin,
   School,
-  Calendar,
-  Settings,
   FileText,
   Clock,
   Percent,
@@ -20,51 +16,43 @@ import {
   Award,
   Plus,
   Trash2,
-  Coins
+  Coins,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { studentSchema } from '../validations/studentSchema';
-import { teacherApi } from '../../teachers/services/teacherApi';
 import { courseApi } from '../../courses/services/courseApi';
+import { teacherApi } from '../../teachers/services/teacherApi';
+import { studentSchema } from '../validations/studentSchema';
 
 import FormDialog from '@/shared/components/FormDialog/FormDialog';
-import { kuwaitGeodata } from '@/shared/constants/kuwaitGeodata';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { toKWD } from '@/shared/utils/money';
+import { kuwaitGeodata } from '@/shared/constants/kuwaitGeodata';
 import { useFormErrorHandler } from '@/shared/hooks/useFormErrorHandler';
+import { toKWD } from '@/shared/utils/money';
 
 const classYearsByGrade = {
-  'تأسيس': [
-    'تمهيدي',
-    'تأسيس لغة عربية',
-    'تأسيس لغة إنجليزية',
-    'تأسيس رياضيات',
-  ],
-  'ابتدائي': [
+  تأسيس: ['تمهيدي', 'تأسيس لغة عربية', 'تأسيس لغة إنجليزية', 'تأسيس رياضيات'],
+  ابتدائي: [
     'الصف الأول',
     'الصف الثاني',
     'الصف الثالث',
     'الصف الرابع',
     'الصف الخامس',
   ],
-  'متوسط': [
-    'الصف السادس',
-    'الصف السابع',
-    'الصف الثامن',
-    'الصف التاسع',
-  ],
-  'ثانوي': [
+  متوسط: ['الصف السادس', 'الصف السابع', 'الصف الثامن', 'الصف التاسع'],
+  ثانوي: [
     'الصف العاشر',
     'الصف الحادي عشر - علمي',
     'الصف الحادي عشر - أدبي',
     'الصف الثاني عشر - علمي',
     'الصف الثاني عشر - أدبي',
   ],
-  'جامعي': ['سنة أولى', 'سنة ثانية', 'سنة ثالثة', 'سنة رابعة'],
-  'قدرات': ['دورة قدرات'],
-  'تحصيلي': ['دورة تحصيلي'],
+  جامعي: ['سنة أولى', 'سنة ثانية', 'سنة ثالثة', 'سنة رابعة'],
+  قدرات: ['دورة قدرات'],
+  تحصيلي: ['دورة تحصيلي'],
 };
 
 const curricula = [
@@ -119,8 +107,8 @@ const StudentFormDialog = ({
       teacherId: '',
       teacherOwnsCar: 'no',
       // Multiple dynamic schedule days row for this specific subject row
-      days: [{ id: 1, day: '', from: '', to: '' }]
-    }
+      days: [{ id: 1, day: '', from: '', to: '' }],
+    },
   ]);
 
   const {
@@ -184,7 +172,7 @@ const StudentFormDialog = ({
   // Create course inline mutation
   const createCourseMutation = useMutation({
     mutationFn: courseApi.create,
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['courses-all']);
       toast.success('تم إنشاء الدورة بنجاح!');
       setCourseCreateOpen(false);
@@ -193,7 +181,7 @@ const StudentFormDialog = ({
     },
     onError: (err) => {
       toast.error(err.message || 'فشل إنشاء الدورة');
-    }
+    },
   });
 
   const handleCreateCourseInline = () => {
@@ -212,7 +200,7 @@ const StudentFormDialog = ({
   // Create teacher inline mutation
   const createTeacherMutation = useMutation({
     mutationFn: teacherApi.createTeacher,
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['teachers-all']);
       toast.success('تم تسجيل المعلم الجديد بنجاح!');
       setTeacherCreateOpen(false);
@@ -224,7 +212,7 @@ const StudentFormDialog = ({
     },
     onError: (err) => {
       toast.error(err.message || 'فشل تسجيل المعلم');
-    }
+    },
   });
 
   const handleCreateTeacherInline = () => {
@@ -236,7 +224,8 @@ const StudentFormDialog = ({
       firstName: newTeacherFirst,
       lastName: newTeacherLast,
       phone: newTeacherPhone,
-      email: newTeacherEmail || `${newTeacherFirst.toLowerCase()}@alphacenter.com`,
+      email:
+        newTeacherEmail || `${newTeacherFirst.toLowerCase()}@alphacenter.com`,
       department: newTeacherSpec || 'عام',
       subjects: [],
       hourlyRate: 10,
@@ -256,7 +245,7 @@ const StudentFormDialog = ({
   // Dynamic smart price calculator spanning across all added dynamic registrations packages
   const calculatedTotalAmount = dynamicRegistrations.reduce((sum, r) => {
     if (r.subject) {
-      return sum + ((r.purchasedHours || 0) * (r.pricePerHour || 0));
+      return sum + (r.purchasedHours || 0) * (r.pricePerHour || 0);
     }
     return sum;
   }, 0);
@@ -320,33 +309,39 @@ const StudentFormDialog = ({
       }
       if (initialData) {
         // Set unified phone default if editing
-        data.unifiedPhone = initialData.parentPhone || initialData.studentPhone || initialData.whatsapp || '';
+        data.unifiedPhone =
+          initialData.parentPhone ||
+          initialData.studentPhone ||
+          initialData.whatsapp ||
+          '';
       }
-      reset(data || {
-        studentName: '',
-        studentPhone: '',
-        parentName: '',
-        parentPhone: '',
-        siblingGroup: '',
-        whatsapp: '',
-        governorate: 'حولي',
-        area: 'السالمية',
-        address: '',
-        googleMapsUrl: '',
-        school: '',
-        grade: 'ابتدائي',
-        classYear: 'الصف الأول',
-        curriculum: 'مخرجات حكومي',
-        subjects: [],
-        monthlyFee: 0,
-        preferredTeacherGender: 'MALE',
-        preferredSchedule: '',
-        notes: '',
-        dateOfBirth: '',
-        enrollmentDate: new Date().toISOString().split('T')[0],
-        status: 'ACTIVE',
-        unifiedPhone: '',
-      });
+      reset(
+        data || {
+          studentName: '',
+          studentPhone: '',
+          parentName: '',
+          parentPhone: '',
+          siblingGroup: '',
+          whatsapp: '',
+          governorate: 'حولي',
+          area: 'السالمية',
+          address: '',
+          googleMapsUrl: '',
+          school: '',
+          grade: 'ابتدائي',
+          classYear: 'الصف الأول',
+          curriculum: 'مخرجات حكومي',
+          subjects: [],
+          monthlyFee: 0,
+          preferredTeacherGender: 'MALE',
+          preferredSchedule: '',
+          notes: '',
+          dateOfBirth: '',
+          enrollmentDate: new Date().toISOString().split('T')[0],
+          status: 'ACTIVE',
+          unifiedPhone: '',
+        }
+      );
       setDynamicRegistrations([
         {
           id: 1,
@@ -357,8 +352,8 @@ const StudentFormDialog = ({
           percentagePreset: '75',
           teacherId: '',
           teacherOwnsCar: 'no',
-          days: [{ id: 1, day: '', from: '', to: '' }]
-        }
+          days: [{ id: 1, day: '', from: '', to: '' }],
+        },
       ]);
       setIsInstallment('no');
       setPriceOverrideReason('');
@@ -370,7 +365,7 @@ const StudentFormDialog = ({
 
   // Handle dynamic multi-subject arrays operations
   const addDynamicRegistrationRow = () => {
-    setDynamicRegistrations(prev => [
+    setDynamicRegistrations((prev) => [
       ...prev,
       {
         id: Date.now(),
@@ -381,79 +376,108 @@ const StudentFormDialog = ({
         percentagePreset: '75',
         teacherId: '',
         teacherOwnsCar: 'no',
-        days: [{ id: 1, day: '', from: '', to: '' }]
-      }
+        days: [{ id: 1, day: '', from: '', to: '' }],
+      },
     ]);
   };
 
   const removeDynamicRegistrationRow = (id) => {
-    setDynamicRegistrations(prev => prev.filter(r => r.id !== id));
+    setDynamicRegistrations((prev) => prev.filter((r) => r.id !== id));
   };
 
   const updateDynamicRegistrationRow = (rowId, key, value) => {
-    setDynamicRegistrations(prev => prev.map(row => {
-      if (row.id === rowId) {
-        const updated = { ...row, [key]: value };
-        if (key === 'teacherId' && value) {
-          const tObj = teachers.find(t => t._id === value);
-          if (tObj) {
-            updated.teacherOwnsCar = tObj.ownsCar ? 'yes' : 'no';
-            const pct = tObj.teacherPercentage ? Math.round(tObj.teacherPercentage * 100) : 70;
-            updated.teacherPercentageSnapshot = pct;
-            updated.percentagePreset = (pct === 75 || pct === 80) ? String(pct) : 'custom';
-            updated.pricePerHour = tObj.hourlyRate ? (tObj.hourlyRate / 1000) : 10;
+    setDynamicRegistrations((prev) =>
+      prev.map((row) => {
+        if (row.id === rowId) {
+          const updated = { ...row, [key]: value };
+          if (key === 'teacherId' && value) {
+            const tObj = teachers.find((t) => t._id === value);
+            if (tObj) {
+              updated.teacherOwnsCar = tObj.ownsCar ? 'yes' : 'no';
+              const pct = tObj.teacherPercentage
+                ? Math.round(tObj.teacherPercentage * 100)
+                : 70;
+              updated.teacherPercentageSnapshot = pct;
+              updated.percentagePreset =
+                pct === 75 || pct === 80 ? String(pct) : 'custom';
+              updated.pricePerHour = tObj.hourlyRate
+                ? tObj.hourlyRate / 1000
+                : 10;
+            }
           }
+          if (key === 'percentagePreset' && value !== 'custom') {
+            updated.teacherPercentageSnapshot = parseInt(value, 10);
+          }
+          return updated;
         }
-        if (key === 'percentagePreset' && value !== 'custom') {
-          updated.teacherPercentageSnapshot = parseInt(value, 10);
-        }
-        return updated;
-      }
-      return row;
-    }));
+        return row;
+      })
+    );
   };
 
   const addDynamicScheduleDay = (regId) => {
-    setDynamicRegistrations(prev => prev.map(row => {
-      if (row.id === regId) {
-        if (row.days.length >= 3) {
-          toast.warning('يمكنك إضافة ٣ مواعيد بحد أقصى للمادة.');
-          return row;
+    setDynamicRegistrations((prev) =>
+      prev.map((row) => {
+        if (row.id === regId) {
+          if (row.days.length >= 3) {
+            toast.warning('يمكنك إضافة ٣ مواعيد بحد أقصى للمادة.');
+            return row;
+          }
+          return {
+            ...row,
+            days: [...row.days, { id: Date.now(), day: '', from: '', to: '' }],
+          };
         }
-        return {
-          ...row,
-          days: [...row.days, { id: Date.now(), day: '', from: '', to: '' }]
-        };
-      }
-      return row;
-    }));
+        return row;
+      })
+    );
   };
 
   const removeDynamicScheduleDay = (regId, dayId) => {
-    setDynamicRegistrations(prev => prev.map(row => {
-      if (row.id === regId) {
-        return {
-          ...row,
-          days: row.days.filter(d => d.id !== dayId)
-        };
-      }
-      return row;
-    }));
+    setDynamicRegistrations((prev) =>
+      prev.map((row) => {
+        if (row.id === regId) {
+          return {
+            ...row,
+            days: row.days.filter((d) => d.id !== dayId),
+          };
+        }
+        return row;
+      })
+    );
   };
 
   const updateDynamicScheduleDay = (regId, dayId, key, value) => {
-    setDynamicRegistrations(prev => prev.map(row => {
-      if (row.id === regId) {
-        return {
-          ...row,
-          days: row.days.map(d => d.id === dayId ? { ...d, [key]: value } : d)
-        };
-      }
-      return row;
-    }));
+    setDynamicRegistrations((prev) =>
+      prev.map((row) => {
+        if (row.id === regId) {
+          return {
+            ...row,
+            days: row.days.map((d) =>
+              d.id === dayId ? { ...d, [key]: value } : d
+            ),
+          };
+        }
+        return row;
+      })
+    );
   };
 
   const onFormSubmit = (data) => {
+    // Verify incomplete dynamic registrations
+    const incompleteReg = dynamicRegistrations.find(
+      (r) =>
+        r.subject &&
+        (parseFloat(r.purchasedHours) <= 0 || parseFloat(r.pricePerHour) < 0)
+    );
+    if (incompleteReg) {
+      toast.warning(
+        `يرجى تحديد عدد الساعات وسعر الساعة لمادة ${incompleteReg.subject} بشكل صحيح.`
+      );
+      setActiveTab('academic');
+      return;
+    }
+
     // Sanitize optional registrations / payments values
     const sanitized = { ...data };
     // Double-guarantee unified phone propagation
@@ -479,14 +503,15 @@ const StudentFormDialog = ({
     sanitized.status = 'ACTIVE';
 
     // Map dynamic multi subject array to payload
-    const activeRegs = dynamicRegistrations.filter(r => r.subject);
+    const activeRegs = dynamicRegistrations.filter((r) => r.subject);
     if (activeRegs.length > 0) {
       // Pass registrations list directly
-      sanitized.academicRegistrations = activeRegs.map(r => ({
+      sanitized.academicRegistrations = activeRegs.map((r) => ({
         subject: r.subject,
         purchasedHours: parseFloat(r.purchasedHours) || 0,
         pricePerHour: parseFloat(r.pricePerHour) || 0,
-        teacherPercentageSnapshot: parseFloat(r.teacherPercentageSnapshot) || 75,
+        teacherPercentageSnapshot:
+          parseFloat(r.teacherPercentageSnapshot) || 75,
         teacherId: r.teacherId || null,
         day1: r.days[0]?.day || null,
         from1: r.days[0]?.from || null,
@@ -500,7 +525,10 @@ const StudentFormDialog = ({
       }));
     }
 
-    if (!sanitized.initialPaidAmount || parseFloat(sanitized.initialPaidAmount) <= 0) {
+    if (
+      !sanitized.initialPaidAmount ||
+      parseFloat(sanitized.initialPaidAmount) <= 0
+    ) {
       delete sanitized.initialPaidAmount;
       delete sanitized.paymentMethod;
     }
@@ -512,7 +540,11 @@ const StudentFormDialog = ({
       <FormDialog
         open={open}
         onOpenChange={onOpenChange}
-        title={initialData ? 'تعديل بيانات طالب' : 'مركز تسجيل الطلاب الموحد (All-in-One)'}
+        title={
+          initialData
+            ? 'تعديل بيانات طالب'
+            : 'مركز تسجيل الطلاب الموحد (All-in-One)'
+        }
         description="يمكنك من هذه النافذة تسجيل الطالب بالكامل، وحجز باقة الحصص الأولى له، وشحن رصيده المالي دفعة واحدة."
         saveText={initialData ? 'تحديث' : 'إضافة وتفعيل الحساب'}
         isSubmitting={isSubmitting}
@@ -521,15 +553,18 @@ const StudentFormDialog = ({
       >
         {/* Dynamic Form Alert banner if any errors exist */}
         {Object.keys(errors).length > 0 && (
-          <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-6" dir="rtl">
+          <div
+            className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-6"
+            dir="rtl"
+          >
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
             <div>
-              <p className="font-bold mb-1">يرجى تصحيح الأخطاء التالية قبل المتابعة:</p>
+              <p className="font-bold mb-1">
+                يرجى تصحيح الأخطاء التالية قبل المتابعة:
+              </p>
               <ul className="list-disc list-inside space-y-0.5">
                 {Object.keys(errors).map((key) => (
-                  <li key={key}>
-                    {errors[key]?.message || `${key} غير صالح`}
-                  </li>
+                  <li key={key}>{errors[key]?.message || `${key} غير صالح`}</li>
                 ))}
               </ul>
             </div>
@@ -537,7 +572,10 @@ const StudentFormDialog = ({
         )}
 
         {/* Visual Navigation Tabs - Spacious Widescreen Row tabs */}
-        <div className="flex border-b mb-6 justify-around text-sm font-semibold mx-6 bg-slate-50/70 p-1.5 rounded-2xl" dir="rtl">
+        <div
+          className="flex border-b mb-6 justify-around text-sm font-semibold mx-6 bg-slate-50/70 p-1.5 rounded-2xl"
+          dir="rtl"
+        >
           <button
             type="button"
             onClick={() => setActiveTab('personal')}
@@ -560,7 +598,9 @@ const StudentFormDialog = ({
             }`}
           >
             <BookOpen className="h-5 w-5" />
-            <span className="text-sm">٢. تسجيل المواد المعلمين والدورات (متعدد)</span>
+            <span className="text-sm">
+              ٢. تسجيل المواد المعلمين والدورات (متعدد)
+            </span>
           </button>
           <button
             type="button"
@@ -572,7 +612,9 @@ const StudentFormDialog = ({
             }`}
           >
             <CreditCard className="h-5 w-5" />
-            <span className="text-sm">٣. الرسوم الشهرية والشحن المالي (اختياري)</span>
+            <span className="text-sm">
+              ٣. الرسوم الشهرية والشحن المالي (اختياري)
+            </span>
           </button>
         </div>
 
@@ -594,7 +636,13 @@ const StudentFormDialog = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="studentName" className="font-bold text-slate-700 text-sm">اسم الطالب (ثنائي/ثلاثي) <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="studentName"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      اسم الطالب (ثنائي/ثلاثي){' '}
+                      <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="studentName"
                       {...register('studentName')}
@@ -603,12 +651,19 @@ const StudentFormDialog = ({
                       className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
                     />
                     {errors.studentName && (
-                      <p className="text-xs text-red-500">{errors.studentName.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.studentName.message}
+                      </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentName" className="font-bold text-slate-700 text-sm">اسم ولي الأمر <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="parentName"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      اسم ولي الأمر <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="parentName"
                       {...register('parentName')}
@@ -617,15 +672,23 @@ const StudentFormDialog = ({
                       className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
                     />
                     {errors.parentName && (
-                      <p className="text-xs text-red-500">{errors.parentName.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.parentName.message}
+                      </p>
                     )}
                   </div>
 
                   {/* Consolidated Unified Phone Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="unifiedPhone" className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                    <Label
+                      htmlFor="unifiedPhone"
+                      className="font-bold text-slate-700 text-sm flex items-center gap-1.5"
+                    >
                       <Phone className="h-4 w-4 text-primary shrink-0" />
-                      <span>رقم هاتف التواصل والواتساب الموحد <span className="text-red-500">*</span></span>
+                      <span>
+                        رقم هاتف التواصل والواتساب الموحد{' '}
+                        <span className="text-red-500">*</span>
+                      </span>
                     </Label>
                     <Input
                       id="unifiedPhone"
@@ -634,20 +697,42 @@ const StudentFormDialog = ({
                       className="bg-slate-50/50 focus:bg-white font-bold tracking-wide h-11 text-sm rounded-lg transition-colors border-slate-200"
                     />
                     {errors.parentPhone && (
-                      <p className="text-xs text-red-500">{errors.parentPhone.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.parentPhone.message}
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="siblingGroup" className="font-semibold text-slate-700 text-sm">كود مجموعة الأشقاء (اختياري)</Label>
-                    <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                    <Label
+                      htmlFor="siblingGroup"
+                      className="font-semibold text-slate-700 text-sm"
+                    >
+                      كود مجموعة الأشقاء (اختياري)
+                    </Label>
+                    <Input
+                      id="siblingGroup"
+                      {...register('siblingGroup')}
+                      placeholder="مثال: FAM-01"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700 text-sm">تاريخ الميلاد</Label>
-                    <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                    <Label
+                      htmlFor="dateOfBirth"
+                      className="font-semibold text-slate-700 text-sm"
+                    >
+                      تاريخ الميلاد
+                    </Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      {...register('dateOfBirth')}
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
                   </div>
                 </div>
               </div>
@@ -661,7 +746,12 @@ const StudentFormDialog = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="grade" className="font-bold text-slate-700 text-sm">المرحلة الدراسية <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="grade"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      المرحلة الدراسية <span className="text-red-500">*</span>
+                    </Label>
                     <select
                       id="grade"
                       {...register('grade')}
@@ -678,22 +768,34 @@ const StudentFormDialog = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="classYear" className="font-bold text-slate-700 text-sm">الصف الدراسي <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="classYear"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      الصف الدراسي <span className="text-red-500">*</span>
+                    </Label>
                     <select
                       id="classYear"
                       {...register('classYear')}
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      {(classYearsByGrade[selectedGrade] || ['أخرى']).map((cl) => (
-                        <option key={cl} value={cl}>
-                          {cl}
-                        </option>
-                      ))}
+                      {(classYearsByGrade[selectedGrade] || ['أخرى']).map(
+                        (cl) => (
+                          <option key={cl} value={cl}>
+                            {cl}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="curriculum" className="font-bold text-slate-700 text-sm">المنهج الدراسي <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="curriculum"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      المنهج الدراسي <span className="text-red-500">*</span>
+                    </Label>
                     <select
                       id="curriculum"
                       {...register('curriculum')}
@@ -710,12 +812,25 @@ const StudentFormDialog = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="school" className="font-semibold text-slate-700 text-sm">المدرسة (اختياري)</Label>
-                    <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                    <Label
+                      htmlFor="school"
+                      className="font-semibold text-slate-700 text-sm"
+                    >
+                      المدرسة (اختياري)
+                    </Label>
+                    <Input
+                      id="school"
+                      {...register('school')}
+                      placeholder="مثال: مدرسة المباركية"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                    <Label
+                      htmlFor="studentSpecialization"
+                      className="font-semibold text-slate-700 text-sm flex items-center gap-1.5"
+                    >
                       <Award className="h-4 w-4 text-primary shrink-0" />
                       <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
                     </Label>
@@ -728,7 +843,12 @@ const StudentFormDialog = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="preferredTeacherGender" className="font-semibold text-slate-700 text-sm">جنس المعلم المفضل</Label>
+                    <Label
+                      htmlFor="preferredTeacherGender"
+                      className="font-semibold text-slate-700 text-sm"
+                    >
+                      جنس المعلم المفضل
+                    </Label>
                     <select
                       id="preferredTeacherGender"
                       {...register('preferredTeacherGender')}
@@ -750,7 +870,12 @@ const StudentFormDialog = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="governorate" className="font-bold text-slate-700 text-sm">المحافظة <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="governorate"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      المحافظة <span className="text-red-500">*</span>
+                    </Label>
                     <select
                       id="governorate"
                       {...register('governorate')}
@@ -765,7 +890,12 @@ const StudentFormDialog = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="area" className="font-bold text-slate-700 text-sm">المنطقة <span className="text-red-500">*</span></Label>
+                    <Label
+                      htmlFor="area"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      المنطقة <span className="text-red-500">*</span>
+                    </Label>
                     <select
                       id="area"
                       {...register('area')}
@@ -780,17 +910,35 @@ const StudentFormDialog = ({
                   </div>
 
                   <div className="space-y-2 lg:col-span-2">
-                    <Label htmlFor="address" className="font-bold text-slate-700 text-sm">العنوان بالتفصيل (القطعة، الشارع، المنزل) <span className="text-red-500">*</span></Label>
-                    <Input id="address" {...register('address')} placeholder="القطعة 3، الشارع 5، المنزل 12" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                    <Label
+                      htmlFor="address"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      العنوان بالتفصيل (القطعة، الشارع، المنزل){' '}
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="address"
+                      {...register('address')}
+                      placeholder="القطعة 3، الشارع 5، المنزل 12"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
                     {errors.address && (
-                      <p className="text-xs text-red-500">{errors.address.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.address.message}
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 pt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="googleMapsUrl" className="font-semibold text-slate-700 text-sm">رابط الموقع الجغرافي على الخرائط (Google Maps)</Label>
+                    <Label
+                      htmlFor="googleMapsUrl"
+                      className="font-semibold text-slate-700 text-sm"
+                    >
+                      رابط الموقع الجغرافي على الخرائط (Google Maps)
+                    </Label>
                     <Input
                       id="googleMapsUrl"
                       {...register('googleMapsUrl')}
@@ -798,7 +946,9 @@ const StudentFormDialog = ({
                       className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
                     />
                     {errors.googleMapsUrl && (
-                      <p className="text-xs text-red-500">{errors.googleMapsUrl.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.googleMapsUrl.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -812,7 +962,12 @@ const StudentFormDialog = ({
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="preferredSchedule" className="font-bold text-slate-700 text-sm">المواعيد المفضلة للطالب (بشكل مفصل)</Label>
+                    <Label
+                      htmlFor="preferredSchedule"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      المواعيد المفضلة للطالب (بشكل مفصل)
+                    </Label>
                     <textarea
                       id="preferredSchedule"
                       {...register('preferredSchedule')}
@@ -822,7 +977,12 @@ const StudentFormDialog = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="notes" className="font-bold text-slate-700 text-sm">ملاحظات إدارية وأكاديمية هامة</Label>
+                    <Label
+                      htmlFor="notes"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      ملاحظات إدارية وأكاديمية هامة
+                    </Label>
                     <textarea
                       id="notes"
                       {...register('notes')}
@@ -853,26 +1013,43 @@ const StudentFormDialog = ({
               <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-amber-900 text-xs flex items-start gap-2.5 shadow-sm">
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
                 <div>
-                  <p className="font-bold mb-1 text-sm">شؤون التسجيل والمواد المتعددة</p>
-                  <p>يمكنك حجز مادة واحدة أو عدة مواد للطالب بنفس الوقت من خلال الأزرار المتاحة، مع إمكانية تفعيل دورات غير مسجلة فوراً.</p>
+                  <p className="font-bold mb-1 text-sm">
+                    شؤون التسجيل والمواد المتعددة
+                  </p>
+                  <p>
+                    يمكنك حجز مادة واحدة أو عدة مواد للطالب بنفس الوقت من خلال
+                    الأزرار المتاحة، مع إمكانية تفعيل دورات غير مسجلة فوراً.
+                  </p>
                 </div>
               </div>
 
               {/* Dynamic multiple registration lists render horizontally */}
               <div className="space-y-8">
                 {dynamicRegistrations.map((row, index) => {
-                  const isRecommended = row.subject;
-                  const rowTeacherObj = teachers.find(t => t._id === row.teacherId);
+                  const rowTeacherObj = teachers.find(
+                    (t) => t._id === row.teacherId
+                  );
                   const sortedRowTeachers = row.subject
                     ? [...teachers].sort((a, b) => {
-                        const aTeaches = a.subjects?.some(sub => sub.toLowerCase().includes(row.subject.toLowerCase())) ? 1 : 0;
-                        const bTeaches = b.subjects?.some(sub => sub.toLowerCase().includes(row.subject.toLowerCase())) ? 1 : 0;
+                        const aTeaches = a.subjects?.some((sub) =>
+                          sub.toLowerCase().includes(row.subject.toLowerCase())
+                        )
+                          ? 1
+                          : 0;
+                        const bTeaches = b.subjects?.some((sub) =>
+                          sub.toLowerCase().includes(row.subject.toLowerCase())
+                        )
+                          ? 1
+                          : 0;
                         return bTeaches - aTeaches;
                       })
                     : teachers;
 
                   return (
-                    <div key={row.id} className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm relative">
+                    <div
+                      key={row.id}
+                      className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm relative"
+                    >
                       <div className="flex justify-between items-center border-b pb-3 mb-4">
                         <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 text-primary">
                           <BookOpen className="h-5 w-5" />
@@ -891,7 +1068,9 @@ const StudentFormDialog = ({
                           {dynamicRegistrations.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => removeDynamicRegistrationRow(row.id)}
+                              onClick={() =>
+                                removeDynamicRegistrationRow(row.id)
+                              }
                               className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
                             >
                               <Trash2 className="h-4.5 w-4.5" />
@@ -902,10 +1081,19 @@ const StudentFormDialog = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label className="font-bold text-slate-700 text-sm">المادة الدراسية المراد حجزها <span className="text-red-500">*</span></Label>
+                          <Label className="font-bold text-slate-700 text-sm">
+                            المادة الدراسية المراد حجزها{' '}
+                            <span className="text-red-500">*</span>
+                          </Label>
                           <select
                             value={row.subject}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'subject', e.target.value)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'subject',
+                                e.target.value
+                              )
+                            }
                             className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold text-slate-900"
                           >
                             <option value="">اختر المادة...</option>
@@ -917,7 +1105,9 @@ const StudentFormDialog = ({
                             {courses.length === 0 && (
                               <>
                                 <option value="لغة عربية">لغة عربية</option>
-                                <option value="لغة إنجليزية">لغة إنجليزية</option>
+                                <option value="لغة إنجليزية">
+                                  لغة إنجليزية
+                                </option>
                                 <option value="رياضيات">رياضيات</option>
                                 <option value="فيزياء">فيزياء</option>
                                 <option value="كيمياء">كيمياء</option>
@@ -928,7 +1118,10 @@ const StudentFormDialog = ({
 
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <Label className="font-bold text-slate-700 text-sm">المعلم المخصص لتدريس المادة <span className="text-red-500">*</span></Label>
+                            <Label className="font-bold text-slate-700 text-sm">
+                              المعلم المخصص لتدريس المادة{' '}
+                              <span className="text-red-500">*</span>
+                            </Label>
                             <button
                               type="button"
                               onClick={() => setTeacherCreateOpen(true)}
@@ -939,17 +1132,35 @@ const StudentFormDialog = ({
                           </div>
                           <select
                             value={row.teacherId}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'teacherId', e.target.value)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'teacherId',
+                                e.target.value
+                              )
+                            }
                             className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
                             <option value="">اختر معلماً من القائمة...</option>
                             {sortedRowTeachers.map((t) => {
                               const spec = t.department || 'عام';
-                              const subs = t.subjects && t.subjects.length > 0 ? t.subjects.join('، ') : 'غير محدد';
-                              const isMatched = row.subject && t.subjects?.some(sub => sub.toLowerCase().includes(row.subject.toLowerCase()));
+                              const subs =
+                                t.subjects && t.subjects.length > 0
+                                  ? t.subjects.join('، ')
+                                  : 'غير محدد';
+                              const isMatched =
+                                row.subject &&
+                                t.subjects?.some((sub) =>
+                                  sub
+                                    .toLowerCase()
+                                    .includes(row.subject.toLowerCase())
+                                );
                               return (
                                 <option key={t._id} value={t._id}>
-                                  {isMatched ? '⭐ [مدرس المادة] ' : ''} {t.userId?.firstName} {t.userId?.lastName} ({spec} | المواد: {subs}) {t.usesInstituteCar ? '🚗' : ''}
+                                  {isMatched ? '⭐ [مدرس المادة] ' : ''}{' '}
+                                  {t.userId?.firstName} {t.userId?.lastName} (
+                                  {spec} | المواد: {subs}){' '}
+                                  {t.usesInstituteCar ? '🚗' : ''}
                                 </option>
                               );
                             })}
@@ -965,9 +1176,27 @@ const StudentFormDialog = ({
                             <span>الملف التعريفي للمعلم المختار:</span>
                           </p>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <p>🎓 التخصص الدراسي: <span className="font-bold text-slate-900">{rowTeacherObj.department || 'عام'}</span></p>
-                            <p>📚 المواد المسجلة لتدريسها: <span className="font-bold text-slate-900">{rowTeacherObj.subjects?.join('، ') || 'غير محدد'}</span></p>
-                            <p>🚗 مواصلات المعهد: <span className="font-bold text-slate-900">{rowTeacherObj.usesInstituteCar ? 'نعم (يستخدم سيارة الأكاديمية)' : 'لا'}</span></p>
+                            <p>
+                              🎓 التخصص الدراسي:{' '}
+                              <span className="font-bold text-slate-900">
+                                {rowTeacherObj.department || 'عام'}
+                              </span>
+                            </p>
+                            <p>
+                              📚 المواد المسجلة لتدريسها:{' '}
+                              <span className="font-bold text-slate-900">
+                                {rowTeacherObj.subjects?.join('، ') ||
+                                  'غير محدد'}
+                              </span>
+                            </p>
+                            <p>
+                              🚗 مواصلات المعهد:{' '}
+                              <span className="font-bold text-slate-900">
+                                {rowTeacherObj.usesInstituteCar
+                                  ? 'نعم (يستخدم سيارة الأكاديمية)'
+                                  : 'لا'}
+                              </span>
+                            </p>
                           </div>
                         </div>
                       )}
@@ -980,11 +1209,21 @@ const StudentFormDialog = ({
                           </Label>
                           <select
                             value={row.teacherOwnsCar}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'teacherOwnsCar', e.target.value)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'teacherOwnsCar',
+                                e.target.value
+                              )
+                            }
                             className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
-                            <option value="yes">نعم (يسير بسيارته الخاصة)</option>
-                            <option value="no">لا (يستخدم مواصلات عامة أو سيارة المركز)</option>
+                            <option value="yes">
+                              نعم (يسير بسيارته الخاصة)
+                            </option>
+                            <option value="no">
+                              لا (يستخدم مواصلات عامة أو سيارة المركز)
+                            </option>
                           </select>
                         </div>
 
@@ -995,12 +1234,24 @@ const StudentFormDialog = ({
                           </Label>
                           <select
                             value={row.percentagePreset}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'percentagePreset', e.target.value)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'percentagePreset',
+                                e.target.value
+                              )
+                            }
                             className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
-                            <option value="75">٧٥٪ للمعلم مقابل ٢٥٪ للمعهد</option>
-                            <option value="80">٨٠٪ للمعلم مقابل ٢٠٪ للمعهد</option>
-                            <option value="custom">نسبة مخصصة يدوياً (Custom)</option>
+                            <option value="75">
+                              ٧٥٪ للمعلم مقابل ٢٥٪ للمعهد
+                            </option>
+                            <option value="80">
+                              ٨٠٪ للمعلم مقابل ٢٠٪ للمعهد
+                            </option>
+                            <option value="custom">
+                              نسبة مخصصة يدوياً (Custom)
+                            </option>
                           </select>
                         </div>
                       </div>
@@ -1008,13 +1259,21 @@ const StudentFormDialog = ({
                       {row.percentagePreset === 'custom' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-primary/5 p-4 rounded-xl border border-primary/20 animate-in fade-in">
                           <div className="space-y-2">
-                            <Label className="font-bold text-primary text-sm">أدخل نسبة المعلم المخصصة يدويًا (٪)</Label>
+                            <Label className="font-bold text-primary text-sm">
+                              أدخل نسبة المعلم المخصصة يدويًا (٪)
+                            </Label>
                             <Input
                               type="number"
                               min="0"
                               max="100"
                               value={row.teacherPercentageSnapshot}
-                              onChange={(e) => updateDynamicRegistrationRow(row.id, 'teacherPercentageSnapshot', parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                updateDynamicRegistrationRow(
+                                  row.id,
+                                  'teacherPercentageSnapshot',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
                               className="bg-white h-11 text-sm rounded-lg border-slate-200"
                             />
                           </div>
@@ -1023,22 +1282,40 @@ const StudentFormDialog = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label className="font-bold text-slate-700 text-sm">عدد الساعات المشتراة للباقة الأولى <span className="text-red-500">*</span></Label>
+                          <Label className="font-bold text-slate-700 text-sm">
+                            عدد الساعات المشتراة للباقة الأولى{' '}
+                            <span className="text-red-500">*</span>
+                          </Label>
                           <Input
                             type="number"
                             value={row.purchasedHours}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'purchasedHours', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'purchasedHours',
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                             className="bg-slate-50/50 focus:bg-white font-bold h-11 text-sm rounded-lg border-slate-200"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="font-bold text-slate-700 text-sm">سعر الساعة المتفق عليه (KWD) <span className="text-red-500">*</span></Label>
+                          <Label className="font-bold text-slate-700 text-sm">
+                            سعر الساعة المتفق عليه (KWD){' '}
+                            <span className="text-red-500">*</span>
+                          </Label>
                           <Input
                             type="number"
                             step="0.001"
                             value={row.pricePerHour}
-                            onChange={(e) => updateDynamicRegistrationRow(row.id, 'pricePerHour', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateDynamicRegistrationRow(
+                                row.id,
+                                'pricePerHour',
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                             className="bg-slate-50/50 focus:bg-white font-bold h-11 text-sm rounded-lg border-slate-200"
                           />
                         </div>
@@ -1061,13 +1338,25 @@ const StudentFormDialog = ({
                         </div>
 
                         <div className="space-y-3">
-                          {row.days.map((dayRow, dayIdx) => (
-                            <div key={dayRow.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-xl border border-slate-200/50 items-end">
+                          {row.days.map((dayRow) => (
+                            <div
+                              key={dayRow.id}
+                              className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-xl border border-slate-200/50 items-end"
+                            >
                               <div>
-                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">اليوم</Label>
+                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">
+                                  اليوم
+                                </Label>
                                 <select
                                   value={dayRow.day}
-                                  onChange={(e) => updateDynamicScheduleDay(row.id, dayRow.id, 'day', e.target.value)}
+                                  onChange={(e) =>
+                                    updateDynamicScheduleDay(
+                                      row.id,
+                                      dayRow.id,
+                                      'day',
+                                      e.target.value
+                                    )
+                                  }
                                   className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
                                 >
                                   <option value="">لا يوجد</option>
@@ -1081,20 +1370,38 @@ const StudentFormDialog = ({
                                 </select>
                               </div>
                               <div>
-                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">من (HH:mm)</Label>
+                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">
+                                  من (HH:mm)
+                                </Label>
                                 <Input
                                   placeholder="14:00"
                                   value={dayRow.from}
-                                  onChange={(e) => updateDynamicScheduleDay(row.id, dayRow.id, 'from', e.target.value)}
+                                  onChange={(e) =>
+                                    updateDynamicScheduleDay(
+                                      row.id,
+                                      dayRow.id,
+                                      'from',
+                                      e.target.value
+                                    )
+                                  }
                                   className="h-9 text-xs bg-white border-slate-200 rounded-lg"
                                 />
                               </div>
                               <div>
-                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">إلى (HH:mm)</Label>
+                                <Label className="text-[10px] text-slate-600 font-bold block mb-1">
+                                  إلى (HH:mm)
+                                </Label>
                                 <Input
                                   placeholder="16:00"
                                   value={dayRow.to}
-                                  onChange={(e) => updateDynamicScheduleDay(row.id, dayRow.id, 'to', e.target.value)}
+                                  onChange={(e) =>
+                                    updateDynamicScheduleDay(
+                                      row.id,
+                                      dayRow.id,
+                                      'to',
+                                      e.target.value
+                                    )
+                                  }
                                   className="h-9 text-xs bg-white border-slate-200 rounded-lg"
                                 />
                               </div>
@@ -1102,7 +1409,12 @@ const StudentFormDialog = ({
                                 {row.days.length > 1 && (
                                   <button
                                     type="button"
-                                    onClick={() => removeDynamicScheduleDay(row.id, dayRow.id)}
+                                    onClick={() =>
+                                      removeDynamicScheduleDay(
+                                        row.id,
+                                        dayRow.id
+                                      )
+                                    }
                                     className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1126,7 +1438,9 @@ const StudentFormDialog = ({
                   className="bg-primary/10 text-primary hover:bg-primary/20 font-black text-sm px-8 py-3 rounded-xl border-2 border-dashed border-primary/30 flex items-center gap-2 transition-all shadow-xs"
                 >
                   <Plus className="h-5 w-5" />
-                  <span>+ حجز باقة مادة دراسية إضافية للطالب في نفس الجلسة</span>
+                  <span>
+                    + حجز باقة مادة دراسية إضافية للطالب في نفس الجلسة
+                  </span>
                 </button>
               </div>
 
@@ -1156,20 +1470,75 @@ const StudentFormDialog = ({
               <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-amber-900 text-xs flex items-start gap-2.5 shadow-sm mx-4">
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
                 <div>
-                  <p className="font-bold mb-1 text-sm">شحن الرصيد المالي وتسجيل السداد</p>
-                  <p>هذا القسم اختياري. يتم حساب المبلغ المطلوب تلقائياً بناءً على حزمة الحصص المسجلة، مع إمكانية التعديل وتفعيل نظام الأقساط.</p>
+                  <p className="font-bold mb-1 text-sm">
+                    شحن الرصيد المالي وتسجيل السداد
+                  </p>
+                  <p>
+                    هذا القسم اختياري. يتم حساب المبلغ المطلوب تلقائياً بناءً
+                    على حزمة الحصص المسجلة، مع إمكانية التعديل وتفعيل نظام
+                    الأقساط.
+                  </p>
                 </div>
               </div>
 
               <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm mx-4">
                 <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
                   <CreditCard className="h-5 w-5" />
-                  <span>الرسوم والدفع المالي المباشر (الشحن الفوري للرصيد)</span>
+                  <span>
+                    الرسوم والدفع المالي المباشر (الشحن الفوري للرصيد)
+                  </span>
                 </h3>
+
+                {/* Interactive Dynamic Cost Breakdown Box */}
+                {dynamicRegistrations.some((r) => r.subject) && (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3 animate-in fade-in">
+                    <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5 border-b pb-2">
+                      <Coins className="h-4 w-4 text-primary shrink-0" />
+                      <span>تفاصيل وتفصيل رسوم الحزم المسجلة:</span>
+                    </h4>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                      {dynamicRegistrations.map((r, i) => {
+                        if (!r.subject) {
+                          return null;
+                        }
+                        const rowTotal =
+                          (r.purchasedHours || 0) * (r.pricePerHour || 0);
+                        return (
+                          <div
+                            key={r.id || i}
+                            className="flex justify-between items-center text-xs text-slate-600 bg-white px-3 py-2 rounded-lg border shadow-xs"
+                          >
+                            <span className="font-bold text-slate-800">
+                              {r.subject}
+                            </span>
+                            <span className="font-semibold text-slate-500">
+                              ({r.purchasedHours || 0} ساعة ×{' '}
+                              {r.pricePerHour || 0} د.ك)
+                            </span>
+                            <span className="font-black text-primary">
+                              {rowTotal.toFixed(3)} KWD
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between items-center border-t pt-2.5 mt-2 text-sm font-black text-slate-800">
+                      <span>إجمالي سعر الحزم بالكامل:</span>
+                      <span className="text-emerald-700 text-base">
+                        {calculatedTotalAmount.toFixed(3)} KWD
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="monthlyFee" className="font-bold text-slate-700 text-sm">الرسوم الشهرية المقررة للطالب (KWD)</Label>
+                    <Label
+                      htmlFor="monthlyFee"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      الرسوم الشهرية المقررة للطالب (KWD)
+                    </Label>
                     <Input
                       id="monthlyFee"
                       type="number"
@@ -1180,9 +1549,17 @@ const StudentFormDialog = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="initialPaidAmount" className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                    <Label
+                      htmlFor="initialPaidAmount"
+                      className="font-bold text-slate-700 text-sm flex items-center gap-1.5"
+                    >
                       <Coins className="h-4 w-4 text-emerald-600" />
-                      <span>مبلغ الدفعة الأولى المستلمة (KWD) <span className="text-muted-foreground font-normal text-xs">(مستحسن تلقائي: {calculatedTotalAmount} KWD)</span></span>
+                      <span>
+                        مبلغ الدفعة الأولى المستلمة (KWD){' '}
+                        <span className="text-muted-foreground font-normal text-xs">
+                          (مستحسن تلقائي: {calculatedTotalAmount} KWD)
+                        </span>
+                      </span>
                     </Label>
                     <Input
                       id="initialPaidAmount"
@@ -1196,24 +1573,36 @@ const StudentFormDialog = ({
                 </div>
 
                 {/* Conditionally reveal Price Override explanation input if calculated value deviates */}
-                {watchInitialPaidAmount !== calculatedTotalAmount && calculatedTotalAmount > 0 && (
-                  <div className="space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-200 animate-in slide-in-from-top-2">
-                    <Label htmlFor="overrideReason" className="font-bold text-amber-900 text-sm">سبب تعديل السعر / الخصم المستهدف <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="overrideReason"
-                      value={priceOverrideReason}
-                      onChange={(e) => setPriceOverrideReason(e.target.value)}
-                      required
-                      placeholder="يرجى كتابة سبب التعديل (مثال: خصم الأشقاء، منحة تفوق، عرض مؤقت)..."
-                      className="bg-white border-amber-300 h-11 text-sm rounded-lg text-slate-800"
-                    />
-                  </div>
-                )}
+                {watchInitialPaidAmount !== calculatedTotalAmount &&
+                  calculatedTotalAmount > 0 && (
+                    <div className="space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-200 animate-in slide-in-from-top-2">
+                      <Label
+                        htmlFor="overrideReason"
+                        className="font-bold text-amber-900 text-sm"
+                      >
+                        سبب تعديل السعر / الخصم المستهدف{' '}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="overrideReason"
+                        value={priceOverrideReason}
+                        onChange={(e) => setPriceOverrideReason(e.target.value)}
+                        required
+                        placeholder="يرجى كتابة سبب التعديل (مثال: خصم الأشقاء، منحة تفوق، عرض مؤقت)..."
+                        className="bg-white border-amber-300 h-11 text-sm rounded-lg text-slate-800"
+                      />
+                    </div>
+                  )}
 
                 {/* Installment selection dropdown */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="isInstallment" className="font-bold text-slate-700 text-sm">نظام سداد الدفعات</Label>
+                    <Label
+                      htmlFor="isInstallment"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      نظام سداد الدفعات
+                    </Label>
                     <select
                       id="isInstallment"
                       value={isInstallment}
@@ -1221,12 +1610,19 @@ const StudentFormDialog = ({
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="no">دفع كامل المبلغ (Fully Paid)</option>
-                      <option value="yes">تقسيط المبلغ على دفعات (Installments)</option>
+                      <option value="yes">
+                        تقسيط المبلغ على دفعات (Installments)
+                      </option>
                     </select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="paymentMethod" className="font-bold text-slate-700 text-sm">طريقة الدفع المستعملة</Label>
+                    <Label
+                      htmlFor="paymentMethod"
+                      className="font-bold text-slate-700 text-sm"
+                    >
+                      طريقة الدفع المستعملة
+                    </Label>
                     <select
                       id="paymentMethod"
                       {...register('paymentMethod')}
@@ -1234,7 +1630,9 @@ const StudentFormDialog = ({
                     >
                       <option value="CASH">نقداً (Cash)</option>
                       <option value="KNET">كي نت (K-Net)</option>
-                      <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
+                      <option value="BANK_TRANSFER">
+                        تحويل بنكي (Bank Transfer)
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -1243,23 +1641,38 @@ const StudentFormDialog = ({
                 {isInstallment === 'yes' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/80 p-5 rounded-2xl border border-slate-100 shadow-inner animate-in slide-in-from-top-2">
                     <div className="space-y-2">
-                      <Label htmlFor="installmentsCount" className="font-bold text-slate-700 text-sm">عدد دفعات التقسيط المستهدفة</Label>
+                      <Label
+                        htmlFor="installmentsCount"
+                        className="font-bold text-slate-700 text-sm"
+                      >
+                        عدد دفعات التقسيط المستهدفة
+                      </Label>
                       <Input
                         id="installmentsCount"
                         type="number"
                         min="2"
                         max="12"
                         value={installmentsCount}
-                        onChange={(e) => setInstallmentsCount(parseInt(e.target.value, 10) || 2)}
+                        onChange={(e) =>
+                          setInstallmentsCount(
+                            parseInt(e.target.value, 10) || 2
+                          )
+                        }
                         className="bg-white h-11 text-sm rounded-lg border-slate-200"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-bold text-slate-700 text-sm">قيمة كل دفعة مستحقة تلقائياً (KWD)</Label>
+                      <Label className="font-bold text-slate-700 text-sm">
+                        قيمة كل دفعة مستحقة تلقائياً (KWD)
+                      </Label>
                       <div className="bg-white border border-slate-200 px-4 h-11 rounded-lg flex items-center justify-start text-base font-black text-primary">
                         {installmentValue} KWD
                       </div>
-                      <p className="text-[10px] text-slate-400">محسوبة بناءً على تقسيم {watchInitialPaidAmount || calculatedTotalAmount} KWD على {installmentsCount} دفعات.</p>
+                      <p className="text-[10px] text-slate-400">
+                        محسوبة بناءً على تقسيم{' '}
+                        {watchInitialPaidAmount || calculatedTotalAmount} KWD
+                        على {installmentsCount} دفعات.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1275,7 +1688,10 @@ const StudentFormDialog = ({
                 </button>
                 <div className="text-xs text-slate-700 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-5 py-3 rounded-xl shadow-sm">
                   <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span className="font-semibold text-emerald-800">جاهز للتفعيل والاعتماد. اضغط على زر الإضافة بالأسفل لإتمام المعاملة فوراً!</span>
+                  <span className="font-semibold text-emerald-800">
+                    جاهز للتفعيل والاعتماد. اضغط على زر الإضافة بالأسفل لإتمام
+                    المعاملة فوراً!
+                  </span>
                 </div>
               </div>
             </div>
@@ -1295,12 +1711,24 @@ const StudentFormDialog = ({
       >
         <div className="space-y-4 text-right" dir="rtl">
           <div className="space-y-2">
-            <Label className="font-bold text-slate-700">اسم الدورة الدراسية</Label>
-            <Input value={newCourseName} onChange={(e) => setNewCourseName(e.target.value)} placeholder="مثال: لغة فرنسية متقدمة" />
+            <Label className="font-bold text-slate-700">
+              اسم الدورة الدراسية
+            </Label>
+            <Input
+              value={newCourseName}
+              onChange={(e) => setNewCourseName(e.target.value)}
+              placeholder="مثال: لغة فرنسية متقدمة"
+            />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold text-slate-700">كود الدورة (رمز فريد)</Label>
-            <Input value={newCourseCode} onChange={(e) => setNewCourseCode(e.target.value.toUpperCase())} placeholder="مثال: CRS-FRANCE" />
+            <Label className="font-bold text-slate-700">
+              كود الدورة (رمز فريد)
+            </Label>
+            <Input
+              value={newCourseCode}
+              onChange={(e) => setNewCourseCode(e.target.value.toUpperCase())}
+              placeholder="مثال: CRS-FRANCE"
+            />
           </div>
           <div className="space-y-2">
             <Label className="font-bold text-slate-700">المادة العلمية</Label>
@@ -1318,7 +1746,9 @@ const StudentFormDialog = ({
             </select>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold text-slate-700">المرحلة الدراسية المقررة</Label>
+            <Label className="font-bold text-slate-700">
+              المرحلة الدراسية المقررة
+            </Label>
             <select
               value={newCourseGrade}
               onChange={(e) => setNewCourseGrade(e.target.value)}
@@ -1344,28 +1774,55 @@ const StudentFormDialog = ({
         isSubmitting={createTeacherMutation.isPending}
         onSave={handleCreateTeacherInline}
       >
-        <div className="space-y-4 text-right overflow-y-auto max-h-[50vh] px-1" dir="rtl">
+        <div
+          className="space-y-4 text-right overflow-y-auto max-h-[50vh] px-1"
+          dir="rtl"
+        >
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="font-bold text-slate-700">الاسم الأول</Label>
-              <Input value={newTeacherFirst} onChange={(e) => setNewTeacherFirst(e.target.value)} placeholder="مثال: صالح" />
+              <Input
+                value={newTeacherFirst}
+                onChange={(e) => setNewTeacherFirst(e.target.value)}
+                placeholder="مثال: صالح"
+              />
             </div>
             <div className="space-y-1">
               <Label className="font-bold text-slate-700">اسم العائلة</Label>
-              <Input value={newTeacherLast} onChange={(e) => setNewTeacherLast(e.target.value)} placeholder="مثال: العجمي" />
+              <Input
+                value={newTeacherLast}
+                onChange={(e) => setNewTeacherLast(e.target.value)}
+                placeholder="مثال: العجمي"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label className="font-bold text-slate-700">رقم هاتف المعلم</Label>
-            <Input value={newTeacherPhone} onChange={(e) => setNewTeacherPhone(e.target.value)} placeholder="مثال: 99881122" />
+            <Input
+              value={newTeacherPhone}
+              onChange={(e) => setNewTeacherPhone(e.target.value)}
+              placeholder="مثال: 99881122"
+            />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold text-slate-700">البريد الإلكتروني (اختياري)</Label>
-            <Input value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} placeholder="teacher@domain.com" />
+            <Label className="font-bold text-slate-700">
+              البريد الإلكتروني (اختياري)
+            </Label>
+            <Input
+              value={newTeacherEmail}
+              onChange={(e) => setNewTeacherEmail(e.target.value)}
+              placeholder="teacher@domain.com"
+            />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold text-slate-700">التخصص الرئيسي / القسم</Label>
-            <Input value={newTeacherSpec} onChange={(e) => setNewTeacherSpec(e.target.value)} placeholder="مثال: لغات، علوم، قدرات" />
+            <Label className="font-bold text-slate-700">
+              التخصص الرئيسي / القسم
+            </Label>
+            <Input
+              value={newTeacherSpec}
+              onChange={(e) => setNewTeacherSpec(e.target.value)}
+              placeholder="مثال: لغات، علوم، قدرات"
+            />
           </div>
         </div>
       </FormDialog>

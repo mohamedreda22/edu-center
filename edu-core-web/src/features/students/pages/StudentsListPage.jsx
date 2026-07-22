@@ -7,11 +7,11 @@ import StudentFormDialog from '../components/StudentFormDialog';
 import { studentApi } from '../services/studentApi';
 
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
-import { parseApiError } from '@/shared/utils/errorParser';
 import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
 import { Button } from '@/shared/components/ui/button';
+import { parseApiError } from '@/shared/utils/errorParser';
 import { formatMoney } from '@/shared/utils/money';
 
 const StudentsListPage = () => {
@@ -20,20 +20,6 @@ const StudentsListPage = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-
-  // Listen to global sidebar add student form trigger
-  React.useEffect(() => {
-    const handleGlobalOpen = () => {
-      createMutation.reset();
-      updateMutation.reset();
-      setEditingStudent(null);
-      setFormOpen(true);
-    };
-    window.addEventListener('edu:open_new_student', handleGlobalOpen);
-    return () => {
-      window.removeEventListener('edu:open_new_student', handleGlobalOpen);
-    };
-  }, [createMutation, updateMutation]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['students', { search }],
@@ -65,6 +51,20 @@ const StudentsListPage = () => {
     },
   });
 
+  // Listen to global sidebar add student form trigger (declared below mutations to prevent Temporal Dead Zone ReferenceError)
+  React.useEffect(() => {
+    const handleGlobalOpen = () => {
+      createMutation.reset();
+      updateMutation.reset();
+      setEditingStudent(null);
+      setFormOpen(true);
+    };
+    window.addEventListener('edu:open_new_student', handleGlobalOpen);
+    return () => {
+      window.removeEventListener('edu:open_new_student', handleGlobalOpen);
+    };
+  }, [createMutation, updateMutation]);
+
   const handleEdit = (student) => {
     createMutation.reset();
     updateMutation.reset();
@@ -84,7 +84,10 @@ const StudentsListPage = () => {
     {
       header: 'الكود',
       cell: (row) => (
-        <Link to={`/students/${row._id}`} className="text-primary hover:underline font-semibold">
+        <Link
+          to={`/students/${row._id}`}
+          className="text-primary hover:underline font-semibold"
+        >
           {row.studentCode}
         </Link>
       ),
@@ -92,7 +95,10 @@ const StudentsListPage = () => {
     {
       header: 'اسم الطالب',
       cell: (row) => (
-        <Link to={`/students/${row._id}`} className="hover:underline font-bold text-slate-900">
+        <Link
+          to={`/students/${row._id}`}
+          className="hover:underline font-bold text-slate-900"
+        >
           {row.studentName || 'غير محدد'}
         </Link>
       ),
@@ -102,8 +108,12 @@ const StudentsListPage = () => {
       header: 'المرحلة والصف',
       cell: (row) => (
         <div className="text-xs">
-          <span className="font-semibold block text-slate-700">{row.grade}</span>
-          <span className="text-slate-500 block">{row.classYear || 'غير محدد'}</span>
+          <span className="font-semibold block text-slate-700">
+            {row.grade}
+          </span>
+          <span className="text-slate-500 block">
+            {row.classYear || 'غير محدد'}
+          </span>
         </div>
       ),
     },
@@ -112,7 +122,9 @@ const StudentsListPage = () => {
       header: 'العنوان',
       cell: (row) => (
         <div className="text-xs">
-          <span className="font-semibold block text-slate-700">{row.governorate}</span>
+          <span className="font-semibold block text-slate-700">
+            {row.governorate}
+          </span>
           <span className="text-slate-500 block">{row.area}</span>
         </div>
       ),
@@ -125,11 +137,17 @@ const StudentsListPage = () => {
     {
       header: 'حالة السداد',
       cell: (row) => (
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-          row.paymentStatus === 'Fully Paid' ? 'bg-green-100 text-green-800' :
-          row.paymentStatus === 'Partially Paid' ? 'bg-amber-100 text-amber-800' :
-          row.paymentStatus === 'No Dues' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <span
+          className={`text-xs px-2 py-1 rounded-full font-medium ${
+            row.paymentStatus === 'Fully Paid'
+              ? 'bg-green-100 text-green-800'
+              : row.paymentStatus === 'Partially Paid'
+                ? 'bg-amber-100 text-amber-800'
+                : row.paymentStatus === 'No Dues'
+                  ? 'bg-gray-100 text-gray-800'
+                  : 'bg-red-100 text-red-800'
+          }`}
+        >
           {row.paymentStatus}
         </span>
       ),
@@ -143,7 +161,12 @@ const StudentsListPage = () => {
               <BookOpen className="h-4 w-4 text-primary" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} title="تعديل">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEdit(row)}
+            title="تعديل"
+          >
             <Edit className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button
@@ -161,7 +184,10 @@ const StudentsListPage = () => {
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
-      <PageHeader title="الطلاب" description="إدارة سجلات الطلاب والاشتراكات لدولة الكويت">
+      <PageHeader
+        title="الطلاب"
+        description="إدارة سجلات الطلاب والاشتراكات لدولة الكويت"
+      >
         <Button
           onClick={() => {
             createMutation.reset();
@@ -201,8 +227,8 @@ const StudentsListPage = () => {
           createMutation.error
             ? parseApiError(createMutation.error)
             : updateMutation.error
-            ? parseApiError(updateMutation.error)
-            : null
+              ? parseApiError(updateMutation.error)
+              : null
         }
       />
 

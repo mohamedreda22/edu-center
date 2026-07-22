@@ -48,4 +48,16 @@ router.get(
   ledgerController.getLedgerSummary
 );
 
+router.get(
+  '/reconciliation',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  ledgerController.getReconciliationReport
+);
+
+router.get(
+  '/predictive',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  ledgerController.getPredictiveAnalytics
+);
+
 export default router;

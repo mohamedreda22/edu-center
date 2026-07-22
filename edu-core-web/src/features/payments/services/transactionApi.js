@@ -10,4 +10,9 @@ export const transactionApi = {
     const response = await apiClient.post('/v1/ledger/transactions', txnData);
     return response.data;
   },
+
+  getReconciliationAudit: async () => {
+    const response = await apiClient.get('/v1/ledger/reconciliation');
+    return response.data;
+  },
 };

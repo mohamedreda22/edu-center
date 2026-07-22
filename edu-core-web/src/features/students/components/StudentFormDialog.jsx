@@ -854,8 +854,8 @@ const StudentFormDialog = ({
                       {...register('preferredTeacherGender')}
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="MALE">ذكر</option>
-                      <option value="FEMALE">أنثى</option>
+                      <option value="MALE">ذكر (Male)</option>
+                      <option value="FEMALE">أنثى (Female)</option>
                     </select>
                   </div>
                 </div>

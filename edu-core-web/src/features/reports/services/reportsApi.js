@@ -49,4 +49,11 @@ export const reportsApi = {
     });
     return response.data;
   },
+
+  getPredictiveAnalytics: async (growthRate = 1.0) => {
+    const response = await apiClient.get('/v1/ledger/predictive', {
+      params: { growthRate },
+    });
+    return response.data;
+  },
 };

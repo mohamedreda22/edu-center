@@ -5,6 +5,8 @@ import {
   createTransaction,
 } from './ledger.service.js';
 import Transaction from './transaction.model.js';
+import { runReconciliationAudit } from './reconciliation.service.js';
+import { getPredictiveFinancials } from './predictive.service.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
@@ -105,6 +107,27 @@ export const getLedgerEntries = asyncHandler(async (req, res) => {
       totalPages: Math.ceil(total / limit),
     },
   });
+});
+
+/**
+ * @desc    Get automated financial reconciliation audit report
+ * @route   GET /api/v1/ledger/reconciliation
+ * @access  Private (Admin, Accountant)
+ */
+export const getReconciliationReport = asyncHandler(async (req, res) => {
+  const report = await runReconciliationAudit(req.user.tenantId);
+  res.status(200).json(report);
+});
+
+/**
+ * @desc    Get predictive financial analytics and forecasts
+ * @route   GET /api/v1/ledger/predictive
+ * @access  Private (Admin, Accountant)
+ */
+export const getPredictiveAnalytics = asyncHandler(async (req, res) => {
+  const growthRate = req.query.growthRate ? parseFloat(req.query.growthRate) : 1.0;
+  const report = await getPredictiveFinancials(req.user.tenantId, growthRate);
+  res.status(200).json(report);
 });
 
 /**
